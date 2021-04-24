@@ -7,6 +7,8 @@ name = "pypi"
 pytorch-lightning = "*"
 hydra = "*"
 torch = "*"
+hydra-core = "*"
+matplotlib = "*"
 
 [dev-packages]
 

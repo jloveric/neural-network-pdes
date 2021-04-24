@@ -13,29 +13,30 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
-import torchvision.transforms as transforms
-from torchvision import datasets, transforms
 import torch
 #from high_order_mlp import HighOrderMLP
-from single_image_dataset import image_to_dataset
 from torch.utils.data import DataLoader, Dataset
 
 
-class ImageDataset(Dataset):
-    def __init__(self, filenames: List[str], rotations: int = 1):
-        # super().__init__()
-        self.output, self.input, self.image = image_to_dataset(
-            filenames[0], rotations=rotations)
+class PDEDataset(Dataset):
+    def __init__(self, rotations: int = 1):
 
-        """
-        x = (2.0*torch.rand(1000)-1.0).view(-1, 1)
-        y = (2.0*torch.rand(1000)-1.0).view(-1, 1)
-        z = torch.where(x*y > 0, -0.5+0*x, 0.5+0*x)
-        self.data = torch.cat([x, y], dim=1)
-        self.z = z
-        print(self.data.shape)
-        self.transform = transform
-        """
+        # interior conditions
+        x = (2.0*torch.rand(10000)-1.0).view(-1, 1)
+        t = torch.rand(10000).view(-1, 1)
+
+        # These could all be generated on the fly
+        # Add initial conditions which start at time t=0
+        x = torch.cat([x, x])
+        t = torch.cat([t, 0*t])
+
+        # initial condition
+        rho = torch.where(x > 0, 1.0, 0.125)
+        p = torch.where(x > 0, 1.0, 0.1)
+        u = torch.where(x > 0, 0.0, 0.0)
+
+        self.input = torch.cat([x, t], dim=1)
+        self.output = torch.cat([rho, u, p], dim=1)
 
     def __len__(self):
         return len(self.output)
@@ -76,15 +77,16 @@ class Net(LightningModule):
 
         full_path = [f"{self.root_dir}/{path}" for path in self.cfg.images]
         #print('full_path', full_path)
-        self.train_dataset = ImageDataset(
-            filenames=full_path, rotations=self.cfg.rotations)
-        self.test_dataset = ImageDataset(
-            filenames=full_path, rotations=self.cfg.rotations)
+        self.train_dataset = PDEDataset(
+            rotations=self.cfg.rotations)
+        self.test_dataset = PDEDataset(
+            rotations=self.cfg.rotations)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         # print('x',x,'y',y)
         y_hat = self(x)
+        print('y_hat', y_hat)
 
         loss = self.loss(y_hat, y)
 
@@ -108,7 +110,7 @@ class Net(LightningModule):
         return optim.Adam(self.parameters(), lr=self.cfg.lr)
 
 
-@hydra.main(config_name="./config/images_config")
+@hydra.main(config_name="./config/euler")
 def run_implicit_images(cfg: DictConfig):
     # TODO use a space filling curve to map x,y linear coordinates
     # to space filling coordinates 1d coordinate.
