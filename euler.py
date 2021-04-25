@@ -15,8 +15,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
-# from high_order_mlp import HighOrderMLP
 from torch.utils.data import DataLoader, Dataset
+
+
+def pde_grid():
+
+    x = torch.arange(-1.0, 1.0, 100)
+    t = torch.tensor(0.0, 1.0, 100)
+    grid_x, grid_t = torch.meshgrid(x, t)
+    return torch.stack(grid_x.flatten(), grid_t.flatten())
 
 
 class PDEDataset(Dataset):
@@ -65,8 +72,15 @@ def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
 
 
 def interior_loss(q: Tensor, grad_q: Tensor):
-    print('q.shape', q.shape)
-    print('grad_q.shape', grad_q.shape)
+    """
+    Compute the loss (solve the PDE) for everywhere not
+    on a boundary or an initial condition.
+    Args :
+        q : primitive variables vector
+        grad_q : gradient of the primitive variables [dx,dt]
+    Returns :
+        difference of pde from 0 squared
+    """
 
     gamma = 1.4
 
@@ -96,8 +110,10 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
     Args :
         x : netork inputs (positions and time).
         q : primitive variable vector.
-        grad_q : gradients of primitive values.
+        grad_q : gradients of primitive values [dx, dt]
         targets : target values (used for boundaries and initial conditions.)
+    Returns :
+        sum of losses.
     """
     left_mask = (x[:, 0] == -1.0)  # x=0
     right_mask = (x[:, 0] == 1.0)  # x=1
@@ -225,21 +241,16 @@ def run_implicit_images(cfg: DictConfig):
         model = Net.load_from_checkpoint(checkpoint_path)
         model.eval()
         image_dir = f"{hydra.utils.get_original_cwd()}/{cfg.images[0]}"
-        output, inputs, image = image_to_dataset(
-            image_dir, rotations=cfg.rotations)
+        inputs = pde_grid()
+
         y_hat = model(inputs)
-        max_x = torch.max(inputs, dim=0)
-        max_y = torch.max(inputs, dim=1)
-        print('x_max', max_x, 'y_max', max_y)
-        print('y_hat.shape', y_hat.shape)
-        print('image.shape', image.shape)
-        ans = y_hat.reshape(image.shape[0], image.shape[1], image.shape[2])
-        ans = (ans+1.0)/2.0
-        f, axarr = plt.subplots(1, 2)
-        axarr[0].imshow(ans.detach().numpy())
-        axarr[0].set_title('fit')
-        axarr[1].imshow(image)
-        axarr[1].set_title('original')
+        
+        outputs = y_hat.reshape(100,100,3)
+        fig, (ax0, ax1) = plt.subplots(2, 1)
+
+        c = ax0.pcolor(outputs[:,:,0])
+        ax0.set_title('default: no edges')
+
         plt.show()
 
 
