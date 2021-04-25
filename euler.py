@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
-#from high_order_mlp import HighOrderMLP
+# from high_order_mlp import HighOrderMLP
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -48,13 +48,27 @@ class PDEDataset(Dataset):
 
         return self.input[idx], self.output[idx]
 
-'''
-def euler_flux(q: Tensor) :
-    rho = q[0]
-    momentum = q[1]
-    energy = q[2]
-    return torch.tensor([momentum, (momentum*momentum/rho)])
-'''
+
+def euler_loss(q: Tensor, grad_q: Tensor):
+    gamma = 1.4
+
+    r = q[:, 0]
+    u = q[:, 1]
+    p = q[:, 2]
+
+    rt = grad_q[:, 0, 1]
+    rx = grad_q[:, 0, 0]
+
+    ut = grad_q[:, 1, 1]
+    ux = grad_q[:, 1, 0]
+
+    pt = grad_q[:, 2, 1]
+    px = grad_q[:, 2, 0]
+
+    c2 = gamma*p/r
+
+    r_eq = torch.stack([rt+u*rx+r*ux, ut+u*ux+(1/r)*px, pt+r*c2*ux+u*px])
+    return torch.dot(r_eq.T, r_eq)
 
 
 class Net(LightningModule):
@@ -85,7 +99,7 @@ class Net(LightningModule):
     def setup(self, stage):
 
         full_path = [f"{self.root_dir}/{path}" for path in self.cfg.images]
-        #print('full_path', full_path)
+        # print('full_path', full_path)
         self.train_dataset = PDEDataset(
             rotations=self.cfg.rotations)
         self.test_dataset = PDEDataset(
@@ -97,30 +111,32 @@ class Net(LightningModule):
         # print('x',x,'y',y)
         y_hat = self(x)
 
-        #print('y_hat.grad', y_hat.grad)
+        # print('y_hat.grad', y_hat.grad)
 
         print('y_hat.shape', y_hat.shape)
-        #deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], grad_outputs = torch.ones_like(y_hat) ,
+        # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], grad_outputs = torch.ones_like(y_hat) ,
         #                          allow_unused=True, retain_graph=True, create_graph=True)
-        #deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], allow_unused=True, retain_graph=True, create_graph=True)
-        #print('deriv', deriv)
-        #print('y_hat', y_hat)
-        jacobian_list =[]
+        # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], allow_unused=True, retain_graph=True, create_graph=True)
+        # print('deriv', deriv)
+        # print('y_hat', y_hat)
+        jacobian_list = []
 
         # We need to perform this operation per element instead of once per batch.  If you do it for a batch in computes
         # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
         # that computes the gradient for each input output pair.  Shouldn't be this slow.
-        for inp in x :
+        for inp in x:
             inp = inp.unsqueeze(dim=0)
-            jacobian = torch.autograd.functional.jacobian(self, inp, create_graph=False, strict=False, vectorize=False)
+            jacobian = torch.autograd.functional.jacobian(
+                self, inp, create_graph=False, strict=False, vectorize=False)
             jacobian_list.append(jacobian)
 
         gradients = torch.stack(jacobian_list)
-        #print('jcacobian', jacobian_list)
-        loss = self.loss(y_hat, y)
+        # print('jcacobian', jacobian_list)
+        #loss = self.loss(y_hat, y)
+        loss = euler_loss(y_hat, gradients)
 
         self.log(f'train_loss', loss, prog_bar=True)
-        #self.log(f'train_acc', acc, prog_bar=True)
+        # self.log(f'train_acc', acc, prog_bar=True)
 
         return loss
 
@@ -139,7 +155,7 @@ class Net(LightningModule):
         return optim.Adam(self.parameters(), lr=self.cfg.lr)
 
 
-@hydra.main(config_name="./config/euler")
+@ hydra.main(config_name="./config/euler")
 def run_implicit_images(cfg: DictConfig):
     # TODO use a space filling curve to map x,y linear coordinates
     # to space filling coordinates 1d coordinate.
