@@ -50,6 +50,9 @@ class PDEDataset(Dataset):
 
 
 def euler_loss(q: Tensor, grad_q: Tensor):
+    print('q.shape',q.shape)
+    print('grad_q.shape',grad_q.shape)
+
     gamma = 1.4
 
     r = q[:, 0]
@@ -68,7 +71,7 @@ def euler_loss(q: Tensor, grad_q: Tensor):
     c2 = gamma*p/r
 
     r_eq = torch.stack([rt+u*rx+r*ux, ut+u*ux+(1/r)*px, pt+r*c2*ux+u*px])
-    return torch.dot(r_eq.T, r_eq)
+    return torch.dot(r_eq.flatten(), r_eq.flatten())
 
 
 class Net(LightningModule):
@@ -130,7 +133,7 @@ class Net(LightningModule):
                 self, inp, create_graph=False, strict=False, vectorize=False)
             jacobian_list.append(jacobian)
 
-        gradients = torch.stack(jacobian_list)
+        gradients = torch.reshape(torch.stack(jacobian_list),(-1,3,2))
         # print('jcacobian', jacobian_list)
         #loss = self.loss(y_hat, y)
         loss = euler_loss(y_hat, gradients)
