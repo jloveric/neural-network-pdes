@@ -14,6 +14,7 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+from torch import Tensor
 #from high_order_mlp import HighOrderMLP
 from torch.utils.data import DataLoader, Dataset
 
@@ -46,6 +47,14 @@ class PDEDataset(Dataset):
             idx = idx.tolist()
 
         return self.input[idx], self.output[idx]
+
+'''
+def euler_flux(q: Tensor) :
+    rho = q[0]
+    momentum = q[1]
+    energy = q[2]
+    return torch.tensor([momentum, (momentum*momentum/rho)])
+'''
 
 
 class Net(LightningModule):
@@ -84,10 +93,30 @@ class Net(LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
+        x.requires_grad_(True)
         # print('x',x,'y',y)
         y_hat = self(x)
-        print('y_hat', y_hat)
 
+        #print('y_hat.grad', y_hat.grad)
+
+        print('y_hat.shape', y_hat.shape)
+        #deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], grad_outputs = torch.ones_like(y_hat) ,
+        #                          allow_unused=True, retain_graph=True, create_graph=True)
+        #deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], allow_unused=True, retain_graph=True, create_graph=True)
+        #print('deriv', deriv)
+        #print('y_hat', y_hat)
+        jacobian_list =[]
+
+        # We need to perform this operation per element instead of once per batch.  If you do it for a batch in computes
+        # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
+        # that computes the gradient for each input output pair.  Shouldn't be this slow.
+        for inp in x :
+            inp = inp.unsqueeze(dim=0)
+            jacobian = torch.autograd.functional.jacobian(self, inp, create_graph=False, strict=False, vectorize=False)
+            jacobian_list.append(jacobian)
+
+        gradients = torch.stack(jacobian_list)
+        #print('jcacobian', jacobian_list)
         loss = self.loss(y_hat, y)
 
         self.log(f'train_loss', loss, prog_bar=True)
