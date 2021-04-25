@@ -49,9 +49,24 @@ class PDEDataset(Dataset):
         return self.input[idx], self.output[idx]
 
 
-def euler_loss(q: Tensor, grad_q: Tensor):
-    print('q.shape',q.shape)
-    print('grad_q.shape',grad_q.shape)
+def initial_condition_loss(outputs: Tensor, targets: Tensor):
+    diff = targets-outputs
+    return torch.dot(diff.flatten(), diff.flatten())
+
+
+def left_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
+    diff = targets-outputs
+    return torch.dot(diff.flatten(), diff.flatten())
+
+
+def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
+    diff = targets-outputs
+    return torch.dot(diff.flatten(), diff.flatten())
+
+
+def interior_loss(q: Tensor, grad_q: Tensor):
+    print('q.shape', q.shape)
+    print('grad_q.shape', grad_q.shape)
 
     gamma = 1.4
 
@@ -72,6 +87,33 @@ def euler_loss(q: Tensor, grad_q: Tensor):
 
     r_eq = torch.stack([rt+u*rx+r*ux, ut+u*ux+(1/r)*px, pt+r*c2*ux+u*px])
     return torch.dot(r_eq.flatten(), r_eq.flatten())
+
+
+def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
+    """
+    Compute the loss for the euler equations
+
+    Args :
+        x : netork inputs (positions and time).
+        q : primitive variable vector.
+        grad_q : gradients of primitive values.
+        targets : target values (used for boundaries and initial conditions.)
+    """
+    left_mask = (x[:, 0] == -1.0)  # x=0
+    right_mask = (x[:, 0] == 1.0)  # x=1
+    ic_mask = (x[:, 1] == 0)  # t=0
+
+    left_indexes = torch.nonzero(left_mask)
+    right_indexes = torch.nonzero(right_mask)
+    ic_indexes = torch.nonzero(ic_mask)
+    interior = torch.logical_not(left_mask+right_mask+ic_mask),
+
+    loss = interior_loss(q[interior], grad_q[interior]) + \
+        initial_condition_loss(q[ic_indexes], targets[ic_indexes]) + \
+        left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) + \
+        right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
+
+    return loss
 
 
 class Net(LightningModule):
@@ -133,10 +175,10 @@ class Net(LightningModule):
                 self, inp, create_graph=False, strict=False, vectorize=False)
             jacobian_list.append(jacobian)
 
-        gradients = torch.reshape(torch.stack(jacobian_list),(-1,3,2))
+        gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
         # print('jcacobian', jacobian_list)
         #loss = self.loss(y_hat, y)
-        loss = euler_loss(y_hat, gradients)
+        loss = euler_loss(x=x, q=y_hat, grad_q=gradients, targets=y)
 
         self.log(f'train_loss', loss, prog_bar=True)
         # self.log(f'train_acc', acc, prog_bar=True)
