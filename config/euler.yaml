@@ -11,13 +11,13 @@ mlp :
   rescale_output : False
   scale : 2.0
   input :
-    segments : 1
+    segments : 10
     width : 2
   output :
-    segments : 1
+    segments : 10
     width : 3
   hidden :
-    segments : 1
+    segments : 10
     layers : 2
     width : 10
 
