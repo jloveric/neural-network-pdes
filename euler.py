@@ -31,13 +31,18 @@ class PDEDataset(Dataset):
     def __init__(self, rotations: int = 1):
 
         # interior conditions
-        x = (2.0*torch.rand(10000)-1.0).view(-1, 1)
-        t = torch.rand(10000).view(-1, 1)
+        x = (2.0*torch.rand(10000)-1.0)
+        t = torch.rand(10000)
+
+        # boundary conditions
+        xl = -torch.ones(1000)
+        xr = torch.ones(1000)
+        tb = torch.rand(1000)
 
         # These could all be generated on the fly
         # Add initial conditions which start at time t=0
-        x = torch.cat([x, x])
-        t = torch.cat([t, 0*t])
+        x = torch.cat((x, x, xl, xr)).view(-1,1)
+        t = torch.cat((t, 0*t, tb, tb)).view(-1,1)
 
         # initial condition
         rho = torch.where(x > 0, 1.0, 0.125)
@@ -226,7 +231,8 @@ def run_implicit_images(cfg: DictConfig):
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
 
     if cfg.train is True:
-        checkpoint_callback = ModelCheckpoint(filename='{epoch}', monitor='train_loss')
+        checkpoint_callback = ModelCheckpoint(
+            filename='{epoch}', monitor='train_loss')
         trainer = Trainer(max_epochs=cfg.max_epochs,
                           gpus=cfg.gpus, callbacks=[checkpoint_callback])
         model = Net(cfg)
