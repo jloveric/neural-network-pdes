@@ -5,6 +5,7 @@ import os
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from pytorch_lightning.metrics.functional import accuracy
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
 from pytorch_lightning import LightningModule, Trainer
@@ -20,10 +21,10 @@ from torch.utils.data import DataLoader, Dataset
 
 def pde_grid():
 
-    x = torch.arange(-1.0, 1.0, 100)
-    t = torch.tensor(0.0, 1.0, 100)
+    x = 2.0*(torch.arange(0, 100, 1)/100.0 - 0.5)
+    t = torch.arange(0.0, 100, 1)/(100.0)
     grid_x, grid_t = torch.meshgrid(x, t)
-    return torch.stack(grid_x.flatten(), grid_t.flatten())
+    return torch.transpose(torch.stack([grid_x.flatten(), grid_t.flatten()]), 0, 1)
 
 
 class PDEDataset(Dataset):
@@ -225,7 +226,9 @@ def run_implicit_images(cfg: DictConfig):
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
 
     if cfg.train is True:
-        trainer = Trainer(max_epochs=cfg.max_epochs, gpus=cfg.gpus)
+        checkpoint_callback = ModelCheckpoint(filename='{epoch}', monitor='train_loss')
+        trainer = Trainer(max_epochs=cfg.max_epochs,
+                          gpus=cfg.gpus, callbacks=[checkpoint_callback])
         model = Net(cfg)
         trainer.fit(model)
         print('testing')
@@ -241,14 +244,15 @@ def run_implicit_images(cfg: DictConfig):
         model = Net.load_from_checkpoint(checkpoint_path)
         model.eval()
         image_dir = f"{hydra.utils.get_original_cwd()}/{cfg.images[0]}"
-        inputs = pde_grid()
-
-        y_hat = model(inputs)
-        
-        outputs = y_hat.reshape(100,100,3)
+        inputs = pde_grid().detach()
+        print('ionputs.shape', inputs.shape)
+        y_hat = model(inputs).detach().numpy()
+        print('yhat.shape', y_hat.shape)
+        outputs = y_hat.reshape(100, 100, 3)
         fig, (ax0, ax1) = plt.subplots(2, 1)
 
-        c = ax0.pcolor(outputs[:,:,0])
+        c = ax0.pcolor(outputs[:, :, 0])
+        d = ax1.plot(outputs[:, 0, 0])
         ax0.set_title('default: no edges')
 
         plt.show()
