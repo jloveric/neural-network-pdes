@@ -11,14 +11,14 @@ mlp :
   rescale_output : False
   scale : 2.0
   input :
-    segments : 10
+    segments : 100
     width : 2
   output :
     segments : 10
     width : 3
   hidden :
     segments : 10
-    layers : 2
+    layers : 1
     width : 10
 
 max_epochs: 50

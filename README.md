@@ -3,7 +3,7 @@ Neural Network Implicit Representation of Partial Differential Equations
 
 ## Training
 ```
-python euler.py
+python euler.py gpus=0 mlp.periodicity=2
 ```
 
 ## Plotting
