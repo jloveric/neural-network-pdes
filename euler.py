@@ -45,9 +45,9 @@ class PDEDataset(Dataset):
         t = torch.cat((t, 0*t, tb, tb)).view(-1,1)
 
         # initial condition
-        rho = torch.where(x > 0, 1.0, 0.125)
-        p = torch.where(x > 0, 1.0, 0.1)
-        u = torch.where(x > 0, 0.0, 0.0)
+        rho = torch.where(x < 0, 1.0, 0.125)
+        p = torch.where(x < 0, 1.0, 0.1)
+        u = torch.where(x < 0, 0.0, 0.0)
 
         self.input = torch.cat([x, t], dim=1)
         self.output = torch.cat([rho, u, p], dim=1)

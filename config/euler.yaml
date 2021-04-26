@@ -3,7 +3,7 @@ images :
   - "images/jupiter.jpg"
 mlp :
   layer_type : "polynomial"
-  n : 3
+  n : 4
   n_in : null
   n_out : null
   n_hidden : null
