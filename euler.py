@@ -104,9 +104,13 @@ def interior_loss(q: Tensor, grad_q: Tensor):
     px = grad_q[:, 2, 0]
 
     c2 = gamma*p/r
+    # Note, the equations below are multiplied by r to reduce the loss.
+    r_eq = torch.stack([rt+u*rx+r*ux, r*(ut+u*ux+(1/r)*px), r*(pt+r*c2*ux+u*px)])
 
-    r_eq = torch.stack([rt+u*rx+r*ux, ut+u*ux+(1/r)*px, pt+r*c2*ux+u*px])
-    return torch.dot(r_eq.flatten(), r_eq.flatten())
+    # and then reduced by a factor 1000 to further shrink
+    res = torch.dot(r_eq.flatten(), r_eq.flatten())/1
+    print('res', res)
+    return res
 
 
 def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
@@ -130,10 +134,14 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
     ic_indexes = torch.nonzero(ic_mask)
     interior = torch.logical_not(left_mask+right_mask+ic_mask),
 
-    loss = interior_loss(q[interior], grad_q[interior]) + \
-        initial_condition_loss(q[ic_indexes], targets[ic_indexes]) + \
-        left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) + \
-        right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
+
+    in_loss = interior_loss(q[interior], grad_q[interior])
+    ic_loss=initial_condition_loss(q[ic_indexes], targets[ic_indexes])
+    left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
+    right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
+    print('in', in_loss,'ic_loss',ic_loss,'left_loss',left_bc_loss,'right_bc_loss',right_bc_loss)
+
+    loss = in_loss+ic_loss+left_bc_loss+right_bc_loss
 
     return loss
 
@@ -258,7 +266,8 @@ def run_implicit_images(cfg: DictConfig):
         fig, (ax0, ax1) = plt.subplots(2, 1)
 
         c = ax0.pcolor(outputs[:, :, 0])
-        d = ax1.plot(outputs[:, 0, 0])
+        for i in range(0,100,10):
+            d = ax1.plot(outputs[:, 0, 0])
         ax0.set_title('default: no edges')
 
         plt.show()

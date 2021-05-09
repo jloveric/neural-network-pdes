@@ -2,7 +2,7 @@ images :
   - "images/newt.jpg"
   - "images/jupiter.jpg"
 mlp :
-  layer_type : "discontinuous"
+  layer_type : "fourier"
   n : 3
   n_in : null
   n_out : null
