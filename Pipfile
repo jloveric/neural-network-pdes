@@ -9,6 +9,7 @@ hydra = "*"
 torch = "*"
 hydra-core = "*"
 matplotlib = "*"
+hydra-nevergrad-sweeper = "*"
 
 [dev-packages]
 

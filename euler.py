@@ -105,7 +105,7 @@ def interior_loss(q: Tensor, grad_q: Tensor):
 
     c2 = gamma*p/r
     # Note, the equations below are multiplied by r to reduce the loss.
-    r_eq = torch.stack([rt+u*rx+r*ux, r*(ut+u*ux+(1/r)*px), r*(pt+r*c2*ux+u*px)])
+    r_eq = torch.stack([rt+u*rx+r*ux, r*(ut+u*ux+(1/r)*px), (pt+r*c2*ux+u*px)])
 
     # and then reduced by a factor 1000 to further shrink
     res = torch.dot(r_eq.flatten(), r_eq.flatten())/1
