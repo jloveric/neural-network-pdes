@@ -41,8 +41,8 @@ class PDEDataset(Dataset):
 
         # These could all be generated on the fly
         # Add initial conditions which start at time t=0
-        x = torch.cat((x, x, xl, xr)).view(-1,1)
-        t = torch.cat((t, 0*t, tb, tb)).view(-1,1)
+        x = torch.cat((x, x, xl, xr)).view(-1, 1)
+        t = torch.cat((t, 0*t, tb, tb)).view(-1, 1)
 
         # initial condition
         rho = torch.where(x < 0, 1.0, 0.125)
@@ -134,12 +134,14 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
     ic_indexes = torch.nonzero(ic_mask)
     interior = torch.logical_not(left_mask+right_mask+ic_mask),
 
-
     in_loss = interior_loss(q[interior], grad_q[interior])
-    ic_loss=initial_condition_loss(q[ic_indexes], targets[ic_indexes])
-    left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
-    right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
-    print('in', in_loss,'ic_loss',ic_loss,'left_loss',left_bc_loss,'right_bc_loss',right_bc_loss)
+    ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes])
+    left_bc_loss = left_dirichlet_bc_loss(
+        q[left_indexes], targets[left_indexes])
+    right_bc_loss = right_dirichlet_bc_loss(
+        q[right_indexes], targets[right_indexes])
+    print('in', in_loss, 'ic_loss', ic_loss, 'left_loss',
+          left_bc_loss, 'right_bc_loss', right_bc_loss)
 
     loss = in_loss+ic_loss+left_bc_loss+right_bc_loss
 
@@ -151,6 +153,11 @@ class Net(LightningModule):
         super().__init__()
         self.save_hyperparameters(cfg)
         self.cfg = cfg
+
+        # TODO: Add a fixed layer after the input layer that
+        # produces [x, t, (x+t), (x-t)] with no weight adjustment
+        # this would be a fixed linear transform layer.
+
         self.model = HighOrderMLP(
             layer_type=cfg.mlp.layer_type,
             n=cfg.mlp.n,
@@ -266,7 +273,7 @@ def run_implicit_images(cfg: DictConfig):
         fig, (ax0, ax1) = plt.subplots(2, 1)
 
         c = ax0.pcolor(outputs[:, :, 0])
-        for i in range(0,100,10):
+        for i in range(0, 100, 10):
             d = ax1.plot(outputs[:, 0, 0])
         ax0.set_title('default: no edges')
 
