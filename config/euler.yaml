@@ -1,25 +1,25 @@
-images :
+images:
   - "images/newt.jpg"
   - "images/jupiter.jpg"
-mlp :
-  layer_type : "fourier"
-  n : 3
-  n_in : null
-  n_out : null
-  n_hidden : null
-  periodicity : null
-  rescale_output : False
-  scale : 2.0
-  input :
-    segments : 10
-    width : 2
-  output :
-    segments : 10
-    width : 3
-  hidden :
-    segments : 10
-    layers : 2
-    width : 10
+mlp:
+  layer_type: "fourier"
+  n: 3
+  n_in: null
+  n_out: null
+  n_hidden: null
+  periodicity: null
+  rescale_output: False
+  scale: 2.0
+  input:
+    segments: 10
+    width: 2
+  output:
+    segments: 10
+    width: 3
+  hidden:
+    segments: 10
+    layers: 2
+    width: 10
 
 max_epochs: 50
 gpus: 1
