@@ -1,6 +1,6 @@
 mlp:
   layer_type: "fourier"
-  n: 3
+  n: 10
   n_in: null
   n_out: null
   n_hidden: null
