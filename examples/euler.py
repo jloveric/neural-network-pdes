@@ -40,8 +40,14 @@ class PDEDataset(Dataset):
         xr = torch.ones(1000)
         tb = torch.rand(1000)
 
+        # Define the "grid" points in the model
         # These could all be generated on the fly
         # Add initial conditions which start at time t=0
+        # Each x has a correspoding time, so below the intial
+        # conditions are all the interior conditions (x,t)
+        # then all conditions at t=0, (x,0) then the left
+        # boundary conditions at various times (xl, tb) and
+        # the right boundary conditions at various times (xr, tb)
         x = torch.cat((x, x, xl, xr)).view(-1, 1)
         t = torch.cat((t, 0 * t, tb, tb)).view(-1, 1)
 
@@ -116,7 +122,6 @@ def interior_loss(q: Tensor, grad_q: Tensor):
 
     # and then reduced by a factor 1000 to further shrink
     res = torch.dot(r_eq.flatten(), r_eq.flatten()) / 1
-    print("res", res)
     return res
 
 
@@ -145,16 +150,6 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
     ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes])
     left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
     right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
-    print(
-        "in",
-        in_loss,
-        "ic_loss",
-        ic_loss,
-        "left_loss",
-        left_bc_loss,
-        "right_bc_loss",
-        right_bc_loss,
-    )
 
     return in_loss, ic_loss, left_bc_loss, right_bc_loss
 
@@ -191,26 +186,14 @@ class Net(LightningModule):
         return self.model(x)
 
     def setup(self, stage):
-
-        full_path = [f"{self.root_dir}/{path}" for path in self.cfg.images]
-        # print('full_path', full_path)
         self.train_dataset = PDEDataset(rotations=self.cfg.rotations)
         self.test_dataset = PDEDataset(rotations=self.cfg.rotations)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         x.requires_grad_(True)
-        # print('x',x,'y',y)
         y_hat = self(x)
 
-        # print('y_hat.grad', y_hat.grad)
-
-        # print("y_hat.shape", y_hat.shape)
-        # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], grad_outputs = torch.ones_like(y_hat) ,
-        #                          allow_unused=True, retain_graph=True, create_graph=True)
-        # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], allow_unused=True, retain_graph=True, create_graph=True)
-        # print('deriv', deriv)
-        # print('y_hat', y_hat)
         jacobian_list = []
 
         # We need to perform this operation per element instead of once per batch.  If you do it for a batch in computes
@@ -224,9 +207,7 @@ class Net(LightningModule):
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
-        # print('jcacobian', jacobian_list)
-        # loss = self.loss(y_hat, y)
-        # print("gradients", gradients)
+
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y
         )
@@ -238,7 +219,6 @@ class Net(LightningModule):
         self.log(f"left_bc_loss", left_bc_loss)
         self.log(f"right_bc_loss", right_bc_loss)
         self.log(f"train_loss", loss, prog_bar=True)
-        # self.log(f'train_acc', acc, prog_bar=True)
 
         return loss
 
@@ -267,14 +247,14 @@ class Net(LightningModule):
 
 @hydra.main(config_path="../config", config_name="euler")
 def run_implicit_images(cfg: DictConfig):
-    # TODO use a space filling curve to map x,y linear coordinates
-    # to space filling coordinates 1d coordinate.
     print(OmegaConf.to_yaml(cfg))
     print("Working directory : {}".format(os.getcwd()))
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
 
     if cfg.train is True:
-        checkpoint_callback = ModelCheckpoint(filename="{epoch}", monitor="train_loss")
+        checkpoint_callback = ModelCheckpoint(
+            filename="{epoch:03d}", monitor="train_loss"
+        )
         trainer = Trainer(
             max_epochs=cfg.max_epochs, gpus=cfg.gpus, callbacks=[checkpoint_callback]
         )
@@ -282,28 +262,63 @@ def run_implicit_images(cfg: DictConfig):
         trainer.fit(model)
         print("testing")
         trainer.test(model)
+
         print("finished testing")
         print("best check_point", trainer.checkpoint_callback.best_model_path)
     else:
         # plot some data
         print("evaluating result")
         print("cfg.checkpoint", cfg.checkpoint)
+
         checkpoint_path = f"{hydra.utils.get_original_cwd()}/{cfg.checkpoint}"
+        this_path = f"{hydra.utils.get_original_cwd()}"
         print("checkpoint_path", checkpoint_path)
+
         model = Net.load_from_checkpoint(checkpoint_path)
         model.eval()
-        image_dir = f"{hydra.utils.get_original_cwd()}/{cfg.images[0]}"
         inputs = pde_grid().detach()
-        print("ionputs.shape", inputs.shape)
         y_hat = model(inputs).detach().numpy()
-        print("yhat.shape", y_hat.shape)
         outputs = y_hat.reshape(100, 100, 3)
-        fig, (ax0, ax1) = plt.subplots(2, 1)
 
-        c = ax0.pcolor(outputs[:, :, 0])
-        for i in range(0, 100, 10):
-            d = ax1.plot(outputs[:, 0, 0])
-        ax0.set_title("default: no edges")
+        names = ["Density", "Velocity", "Energy"]
+        for j, name in enumerate(names):
+
+            plt.figure(j + 1)
+            fig, (ax0, ax1) = plt.subplots(2, 1)
+
+            # The outputs are density, momentum and energy
+            # so each of the components 0, 1, 2 represents
+            # on of those quantities
+            c = ax0.pcolor(outputs[:, :, j])
+            ax0.set_xlabel("x")
+            ax0.set_ylabel("time")
+
+            for i in range(0, 100, 20):
+                if name == "Velocity":
+                    d = ax1.plot(outputs[:, i, j] / outputs[:, i, 0], label=f"t={i}")
+                else:
+                    d = ax1.plot(outputs[:, i, j], label=f"t={i}")
+
+                ax1.set_xlabel("x")
+                ax1.set_ylabel(f"{name}")
+
+            ax1.legend()
+
+            ax0.set_title(f"{name} with {cfg.mlp.layer_type} layers")
+            plt.xlabel("x")
+
+            if cfg.save_images is True:
+                plt.savefig(
+                    f"{this_path}/images/{name}-{cfg.mlp.layer_type}",
+                    dpi="figure",
+                    format=None,
+                    metadata=None,
+                    bbox_inches=None,
+                    pad_inches=0.1,
+                    facecolor="auto",
+                    edgecolor="auto",
+                    backend=None,
+                )
 
         plt.show()
 
