@@ -17,6 +17,7 @@ omegaconf = "^2.2.2"
 protobuf = "<4.21.0"
 
 [tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
+from torch.nn import BatchNorm1d, LayerNorm
 
 
 def pde_grid():
@@ -155,9 +156,7 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
         right_bc_loss,
     )
 
-    loss = in_loss + ic_loss + left_bc_loss + right_bc_loss
-
-    return loss
+    return in_loss, ic_loss, left_bc_loss, right_bc_loss
 
 
 class Net(LightningModule):
@@ -183,6 +182,7 @@ class Net(LightningModule):
             hidden_width=cfg.mlp.hidden.width,
             hidden_layers=cfg.mlp.hidden.layers,
             hidden_segments=cfg.mlp.hidden.segments,
+            # normalization=BatchNorm1d(cfg.mlp.hidden.width),
         )
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
@@ -205,7 +205,7 @@ class Net(LightningModule):
 
         # print('y_hat.grad', y_hat.grad)
 
-        print("y_hat.shape", y_hat.shape)
+        # print("y_hat.shape", y_hat.shape)
         # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], grad_outputs = torch.ones_like(y_hat) ,
         #                          allow_unused=True, retain_graph=True, create_graph=True)
         # deriv = torch.autograd.grad(outputs = [y_hat], inputs = [x], allow_unused=True, retain_graph=True, create_graph=True)
@@ -219,15 +219,24 @@ class Net(LightningModule):
         for inp in x:
             inp = inp.unsqueeze(dim=0)
             jacobian = torch.autograd.functional.jacobian(
-                self, inp, create_graph=False, strict=False, vectorize=False
+                self, inp, create_graph=True, strict=False, vectorize=False
             )
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
         # print('jcacobian', jacobian_list)
         # loss = self.loss(y_hat, y)
-        loss = euler_loss(x=x, q=y_hat, grad_q=gradients, targets=y)
+        # print("gradients", gradients)
+        in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
+            x=x, q=y_hat, grad_q=gradients, targets=y
+        )
 
+        loss = in_loss + ic_loss + left_bc_loss + right_bc_loss
+
+        self.log(f"in_loss", in_loss)
+        self.log(f"ic_loss", ic_loss)
+        self.log(f"left_bc_loss", left_bc_loss)
+        self.log(f"right_bc_loss", right_bc_loss)
         self.log(f"train_loss", loss, prog_bar=True)
         # self.log(f'train_acc', acc, prog_bar=True)
 
@@ -256,7 +265,7 @@ class Net(LightningModule):
         return optim.Adam(self.parameters(), lr=self.cfg.lr)
 
 
-@hydra.main(config_path="./config", config_name="euler")
+@hydra.main(config_path="../config", config_name="euler")
 def run_implicit_images(cfg: DictConfig):
     # TODO use a space filling curve to map x,y linear coordinates
     # to space filling coordinates 1d coordinate.
