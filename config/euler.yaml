@@ -1,5 +1,5 @@
 mlp:
-  layer_type: "continuous"
+  layer_type: "discontinuous"
   n: 3
   n_in: null
   n_out: null
