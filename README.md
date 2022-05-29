@@ -2,11 +2,32 @@
 Neural Network Implicit Representation of Partial Differential Equations.  The problems here are solved using a simple high order MLP where
 the the input is (x,t) in 1D and the output is density, velocity and pressure.  The loss function is partial differential equation for the 1d euler equations of gas dynamics dotted with itself.
 
+## Euler equations
+
+$$ 
+\frac{\partial}{\partial t} \left[ \begin{array}{c} 
+\rho \\
+\rho v \\
+e \\
+\end{array}\right]
++ \frac{\partial}{\partial x} \left[
+\begin{array}{c}
+\rho v \\
+\rho v^{2}+p \\
+\left(e+p\right)v
+\end{array}\right]
+=r
+$$
+where r=0.  The PDE is used as the loss function and r is the residual so that $loss=r\cdot r$.
+
+
 ## Sod Shock
 
-"Solutions" to the Sod Shock problem in fluid dynamics, which is 1 dimensional ideal compressible gas dynamics (euler equations), a very classic problem.  Solutions need to be much better (and faster) to be 
+"Solutions" to the Sod Shock problem in fluid dynamics, which is 1 dimensional ideal compressible gas dynamics (euler equations), a very classic problem.  Solutions need to be much better (and faster) before I try and extend to much more complicated systems. I'll try and improve on this as I have time.
 
 ## Fourier layers
+The solution at t=0 should be a step function.  The model need to learn the initial conditions as well as all
+the boundary conditions and the interior solution.  You can see here the initial condition is not perfect.
 
 ![Sod Shock Density](images/Density-fourier.png)
 ![Sod Shock Velocity](images/Velocity-fourier.png)
