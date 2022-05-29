@@ -9,8 +9,8 @@ $$
 \rho \\
 \rho v \\
 e \\
-\end{array}\right]
-+ \frac{\partial}{\partial x} \left[
+\end{array}\right]+
+\frac{\partial}{\partial x} \left[
 \begin{array}{c}
 \rho v \\
 \rho v^{2}+p \\
