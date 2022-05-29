@@ -18,6 +18,7 @@ e \\
 \end{array}\right]
 =r
 $$
+
 where r=0.  The PDE is used as the loss function and r is the residual so that $loss=r\cdot r$.
 
 
