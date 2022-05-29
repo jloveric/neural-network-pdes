@@ -4,12 +4,14 @@ Neural Network Implicit Representation of Partial Differential Equations.  The i
 ![Sod Shock Density](images/Density-fourier.png)
 ![Sod Shock Velocity](images/Velocity-fourier.png)
 
-and with continuous piecewise polynomial layers
+### With continuous piecewise polynomial layers
 
 ![Sod Shock Density](images/Density-continuous.png)
 ![Sod Shock Velocity](images/Velocity-continuous.png)
 
-and with discontinuous piecewise polynomials.  In this case it gets
+### With discontinuous piecewise polynomial layers
+
+In this case it gets
 the initial condition almost exactly right and can produce genuine discontinuities, but it's clearly showing many wrong and entropy violating shocks (not to mention not conserving mass etc...).  I need to add some penalty function here to prevent bad shocks.  This one converged the fastest by far.  The wave reflects
 at the boundary as I'm using dirichlet bcs for now.  I believe this is the best long term approach if I can get rid of these various problems.
 
