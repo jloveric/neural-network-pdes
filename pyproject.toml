@@ -15,6 +15,7 @@ hydra-nevergrad-sweeper = "^1.2.0"
 high-order-layers-torch = "^1.1.2"
 omegaconf = "^2.2.2"
 protobuf = "<4.21.0"
+functorch = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

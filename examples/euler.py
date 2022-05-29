@@ -199,6 +199,7 @@ class Net(LightningModule):
         # We need to perform this operation per element instead of once per batch.  If you do it for a batch in computes
         # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
         # that computes the gradient for each input output pair.  Shouldn't be this slow.
+        # This should use vmap
         for inp in x:
             inp = inp.unsqueeze(dim=0)
             jacobian = torch.autograd.functional.jacobian(
@@ -207,19 +208,6 @@ class Net(LightningModule):
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
-
-        # Then try all at once
-        """
-        a.grad.detach_() 
-        a.grad.zero_()
-        y_hat.backward()
-        """
-        """
-        jacobian2 = torch.autograd.functional.jacobian(
-            self, x, create_graph=True, strict=False, vectorize=True
-        )
-        print("gradients", gradients.shape, "jacobian2", jacobian2.shape)
-        """
 
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y

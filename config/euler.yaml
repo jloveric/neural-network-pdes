@@ -1,6 +1,6 @@
 mlp:
-  layer_type: "discontinuous"
-  n: 3
+  layer_type: "continuous"
+  n: 2
   n_in: null
   n_out: null
   n_hidden: null
@@ -8,7 +8,7 @@ mlp:
   rescale_output: False
   scale: 2.0
   normalize: False
-  segments: 3
+  segments: 100
   input:
     segments: ${mlp.segments}
     width: 2
