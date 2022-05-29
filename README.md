@@ -4,6 +4,11 @@ Neural Network Implicit Representation of Partial Differential Equations.  The i
 ![Sod Shock Density](images/Density-fourier.png)
 ![Sod Shock Velocity](images/Velocity-fourier.png)
 
+and with continuous piecewise polynomial layers
+
+![Sod Shock Density](images/Density-continuous.png)
+![Sod Shock Velocity](images/Velocity-continuous.png)
+
 ## Training
 ```
 python examples/euler.py gpus=0 mlp.periodicity=2

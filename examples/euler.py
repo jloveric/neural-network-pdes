@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
-from torch.nn import BatchNorm1d, LayerNorm
+from torch.nn import LazyBatchNorm1d, LayerNorm
 
 
 def pde_grid():
@@ -177,7 +177,7 @@ class Net(LightningModule):
             hidden_width=cfg.mlp.hidden.width,
             hidden_layers=cfg.mlp.hidden.layers,
             hidden_segments=cfg.mlp.hidden.segments,
-            # normalization=BatchNorm1d(cfg.mlp.hidden.width),
+            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d(),
         )
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
@@ -202,11 +202,24 @@ class Net(LightningModule):
         for inp in x:
             inp = inp.unsqueeze(dim=0)
             jacobian = torch.autograd.functional.jacobian(
-                self, inp, create_graph=True, strict=False, vectorize=False
+                self, inp, create_graph=True, strict=False, vectorize=True
             )
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
+
+        # Then try all at once
+        """
+        a.grad.detach_() 
+        a.grad.zero_()
+        y_hat.backward()
+        """
+        """
+        jacobian2 = torch.autograd.functional.jacobian(
+            self, x, create_graph=True, strict=False, vectorize=True
+        )
+        print("gradients", gradients.shape, "jacobian2", jacobian2.shape)
+        """
 
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y
