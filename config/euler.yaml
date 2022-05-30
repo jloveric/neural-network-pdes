@@ -20,6 +20,9 @@ mlp:
     layers: 1
     width: 10
 
+# generate this many interior data points
+data_size: 10000
+
 max_epochs: 100
 gpus: 1
 lr: 1e-3

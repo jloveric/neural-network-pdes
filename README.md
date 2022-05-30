@@ -61,4 +61,4 @@ python examples/euler.py checkpoint=\"outputs/2021-04-25/18-54-45/lightning_logs
 pytest tests
 ```
 ## Warning!
-Currently this is really slow as I need a batched gradient computation and the [torch implementation](https://pytorch.org/tutorials/prototype/vmap_recipe.html) is still in development and [functorch implementation](https://github.com/pytorch/functorch/issues) seems not to be able to handle my networks right now.  So I'm computing the gradients one element at a time instead of in batch.
+Currently this is really slow as I need a batched gradient computation and the [functorch implementation](https://github.com/pytorch/functorch/issues) seems not to be able to handle my networks right now.  So I'm computing the gradients one element at a time instead of in batch.

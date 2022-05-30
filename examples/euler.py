@@ -8,7 +8,7 @@ from torchmetrics.functional import accuracy
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
-from pytorch_lightning import LightningModule, Trainer
+from pytorch_lightning import LightningModule, Trainer, Callback
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
@@ -18,6 +18,10 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 from torch.nn import LazyBatchNorm1d, LayerNorm
+from torchvision.utils import make_grid
+import io
+import PIL.Image
+from torchvision import transforms
 
 
 def pde_grid():
@@ -29,16 +33,17 @@ def pde_grid():
 
 
 class PDEDataset(Dataset):
-    def __init__(self, rotations: int = 1):
+    def __init__(self, size: int = 10000, rotations: int = 1):
 
         # interior conditions
-        x = 2.0 * torch.rand(10000) - 1.0
-        t = torch.rand(10000)
+        x = 2.0 * torch.rand(size) - 1.0
+        t = torch.rand(size)
 
-        # boundary conditions
-        xl = -torch.ones(1000)
-        xr = torch.ones(1000)
-        tb = torch.rand(1000)
+        # boundary conditions (perhaps these should be sqrt interior...)
+        boundary_size = int(size / 10)
+        xl = -torch.ones(boundary_size)
+        xr = torch.ones(boundary_size)
+        tb = torch.rand(boundary_size)
 
         # Define the "grid" points in the model
         # These could all be generated on the fly
@@ -185,11 +190,15 @@ class Net(LightningModule):
     def forward(self, x):
         return self.model(x)
 
-    def setup(self, stage):
-        self.train_dataset = PDEDataset(rotations=self.cfg.rotations)
-        self.test_dataset = PDEDataset(rotations=self.cfg.rotations)
+    def setup(self, stage: int):
+        self.train_dataset = PDEDataset(
+            size=self.cfg.data_size, rotations=self.cfg.rotations
+        )
+        self.test_dataset = PDEDataset(
+            size=self.cfg.data_size, rotations=self.cfg.rotations
+        )
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tensor, batch_idx: int):
         x, y = batch
         x.requires_grad_(True)
         y_hat = self(x)
@@ -246,6 +255,95 @@ class Net(LightningModule):
         return optim.Adam(self.parameters(), lr=self.cfg.lr)
 
 
+class ImageSampler(Callback):
+    def __init__(self, cfg):
+        super().__init__()
+        self.cfg = cfg
+
+    def on_train_epoch_end(self, trainer, pl_module, outputs=None):
+
+        images = generate_images(
+            pl_module, save_to="memory", layer_type=self.cfg.mlp.layer_type
+        )
+
+        for index, image in enumerate(images):
+            trainer.logger.experiment.add_image(
+                f"img{index}", image, global_step=trainer.global_step
+            )
+
+
+def generate_images(model: nn.Module, save_to: str = None, layer_type: str = None):
+
+    model.eval()
+    inputs = pde_grid().detach().to(model.device)
+    y_hat = model(inputs).detach().cpu().numpy()
+    outputs = y_hat.reshape(100, 100, 3)
+
+    names = ["Density", "Velocity", "Pressure"]
+
+    image_list = []
+    for j, name in enumerate(names):
+
+        plt.figure(j + 1)
+        fig, (ax0, ax1) = plt.subplots(2, 1)
+
+        # The outputs are density, momentum and energy
+        # so each of the components 0, 1, 2 represents
+        # on of those quantities
+        c = ax0.pcolor(outputs[:, :, j])
+        ax0.set_xlabel("x")
+        ax0.set_ylabel("time")
+
+        for i in range(0, 100, 20):
+            d = ax1.plot(outputs[:, i, j], label=f"t={i}")
+
+            ax1.set_xlabel("x")
+            ax1.set_ylabel(f"{name}")
+
+        ax1.legend()
+
+        ax0.set_title(f"{name} with {layer_type} layers")
+        plt.xlabel("x")
+
+        if save_to == "file":
+            this_path = f"{hydra.utils.get_original_cwd()}"
+            plt.savefig(
+                f"{this_path}/images/{name}-{layer_type}",
+                dpi="figure",
+                format=None,
+                metadata=None,
+                bbox_inches=None,
+                pad_inches=0.1,
+                facecolor="auto",
+                edgecolor="auto",
+                backend=None,
+            )
+        elif save_to == "memory":
+            buf = io.BytesIO()
+            plt.savefig(
+                buf,
+                dpi="figure",
+                format=None,
+                metadata=None,
+                bbox_inches=None,
+                pad_inches=0.1,
+                facecolor="auto",
+                edgecolor="auto",
+                backend=None,
+            )
+            buf.seek(0)
+            image = PIL.Image.open(buf)
+            image = transforms.ToTensor()(image)
+            image_list.append(image)
+
+    if save_to != "memory":
+        plt.show()
+    else:
+        return image_list
+
+    return None
+
+
 @hydra.main(config_path="../config", config_name="euler")
 def run_implicit_images(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
@@ -257,7 +355,9 @@ def run_implicit_images(cfg: DictConfig):
             filename="{epoch:03d}", monitor="train_loss"
         )
         trainer = Trainer(
-            max_epochs=cfg.max_epochs, gpus=cfg.gpus, callbacks=[checkpoint_callback]
+            max_epochs=cfg.max_epochs,
+            gpus=cfg.gpus,
+            callbacks=[checkpoint_callback, ImageSampler(cfg=cfg)],
         )
         model = Net(cfg)
         trainer.fit(model)
@@ -272,56 +372,15 @@ def run_implicit_images(cfg: DictConfig):
         print("cfg.checkpoint", cfg.checkpoint)
 
         checkpoint_path = f"{hydra.utils.get_original_cwd()}/{cfg.checkpoint}"
-        this_path = f"{hydra.utils.get_original_cwd()}"
         print("checkpoint_path", checkpoint_path)
 
         model = Net.load_from_checkpoint(checkpoint_path)
-        model.eval()
-        inputs = pde_grid().detach()
-        y_hat = model(inputs).detach().numpy()
-        outputs = y_hat.reshape(100, 100, 3)
 
-        names = ["Density", "Velocity", "Energy"]
-        for j, name in enumerate(names):
-
-            plt.figure(j + 1)
-            fig, (ax0, ax1) = plt.subplots(2, 1)
-
-            # The outputs are density, momentum and energy
-            # so each of the components 0, 1, 2 represents
-            # on of those quantities
-            c = ax0.pcolor(outputs[:, :, j])
-            ax0.set_xlabel("x")
-            ax0.set_ylabel("time")
-
-            for i in range(0, 100, 20):
-                if name == "Velocity":
-                    d = ax1.plot(outputs[:, i, j] / outputs[:, i, 0], label=f"t={i}")
-                else:
-                    d = ax1.plot(outputs[:, i, j], label=f"t={i}")
-
-                ax1.set_xlabel("x")
-                ax1.set_ylabel(f"{name}")
-
-            ax1.legend()
-
-            ax0.set_title(f"{name} with {cfg.mlp.layer_type} layers")
-            plt.xlabel("x")
-
-            if cfg.save_images is True:
-                plt.savefig(
-                    f"{this_path}/images/{name}-{cfg.mlp.layer_type}",
-                    dpi="figure",
-                    format=None,
-                    metadata=None,
-                    bbox_inches=None,
-                    pad_inches=0.1,
-                    facecolor="auto",
-                    edgecolor="auto",
-                    backend=None,
-                )
-
-        plt.show()
+        generate_images(
+            model=model,
+            save_to="file" if cfg.save_images else None,
+            layer_type=cfg.mlp.layer_type,
+        )
 
 
 if __name__ == "__main__":
