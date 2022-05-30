@@ -1,6 +1,6 @@
 # neural-network-pdes
 Neural Network Implicit Representation of Partial Differential Equations.  The problems here are solved using a simple high order MLP where
-the the input is (x,t) in 1D and the output is density, velocity and pressure.  The loss function is partial differential equation for the 1d euler equations of gas dynamics dotted with itself.  The resulting model contains the entire solution at every time point and every space point between start and end.
+the the input is (x,t) in 1D and the output is density, velocity and pressure.  The loss function is partial differential equation for the 1d euler equations of gas dynamics dotted with itself.  The resulting model contains the entire solution at every time point and every space point between start and end.  Currently there is a bug in functorch which is preventing the batching of the jacobian calculations in my network - I'll need that working before I can develop this efficiently, so may come back once that issue is resolved.
 
 ## Euler equations
 

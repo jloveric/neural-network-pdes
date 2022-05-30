@@ -22,6 +22,7 @@ from torchvision.utils import make_grid
 import io
 import PIL.Image
 from torchvision import transforms
+import functorch
 
 
 def pde_grid():
@@ -217,6 +218,10 @@ class Net(LightningModule):
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
+
+        # This currently fails, due to a bug in functorch
+        # TODO: re-enable this in the future.
+        # jacobian = functorch.vmap(functorch.jacrev(self))(x)
 
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y
