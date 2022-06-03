@@ -1,30 +1,20 @@
 mlp:
+  layer_type: linear-sin # Need this for rendering
+  embedding_size: 6
   nonlinearity: sin
-  layer_type: "baseline"
-  n: 3
-  n_in: null
-  n_out: null
-  n_hidden: null
-  periodicity: 2.0
-  rescale_output: False
-  scale: 2.0
   normalize: False # TODO: Not working when True with the jacobian calculation
-  segments: null
   input:
-    segments: ${mlp.segments}
     width: 2
   output:
-    segments: ${mlp.segments}
     width: 3
   hidden:
-    segments: ${mlp.segments}
     layers: 8
     width: 100
 
 # generate this many interior data points
 data_size: 10000
 
-max_epochs: 100
+max_epochs: 1000
 gpus: 1
 lr: 1e-3
 batch_size: 256

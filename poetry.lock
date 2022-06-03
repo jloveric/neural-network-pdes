@@ -310,7 +310,7 @@ protobuf = ["grpcio-tools (>=1.46.3)"]
 
 [[package]]
 name = "high-order-layers-torch"
-version = "1.1.4"
+version = "1.1.7"
 description = "High order layers in pytorch"
 category = "main"
 optional = false
@@ -986,7 +986,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "a928aeb5d1ef73e6970d19dfd46298f5e74e447957695163790b08529412cd65"
+content-hash = "c261a317227b5ac90612665327d8c3d66c94e5946fa7a1d87ff46a471d9b7e0a"
 
 [metadata.files]
 absl-py = [
@@ -1286,8 +1286,8 @@ grpcio = [
     {file = "grpcio-1.46.3.tar.gz", hash = "sha256:4b8fd8b1cd553635274b83cd984f0755e6779886eca53c1c71d48215962eb689"},
 ]
 high-order-layers-torch = [
-    {file = "high-order-layers-torch-1.1.4.tar.gz", hash = "sha256:7d9332f9a4e5f734464f62afb3a215d851305631e69e38df43423461336c4a30"},
-    {file = "high_order_layers_torch-1.1.4-py3-none-any.whl", hash = "sha256:0507a6018edc3a2229c8fa8d4d48f564c2b6009163731b4310d41517b7c64b9a"},
+    {file = "high-order-layers-torch-1.1.7.tar.gz", hash = "sha256:9188ae507fd0e63d7c2991ab314fdb7d4a2d3028076e4d002ece19b460291a93"},
+    {file = "high_order_layers_torch-1.1.7-py3-none-any.whl", hash = "sha256:f39d32dde149973f6b1c6b8d40d796efe10820481a5a3c4eb78bea58164205a1"},
 ]
 hydra-core = [
     {file = "hydra-core-1.2.0.tar.gz", hash = "sha256:4990721ce4ac69abafaffee566d6b63a54faa6501ecce65b338d3251446ff634"},

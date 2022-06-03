@@ -22,7 +22,16 @@ import functorch
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
 
-nonlinearity_options = {"relu": torch.relu, "sin": torch.sin}
+
+class SinLayer(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.sin(x)
+
+
+nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer()}
 
 
 class Net(LightningModule):
