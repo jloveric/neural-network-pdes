@@ -1,5 +1,5 @@
 mlp:
-  layer_type: linear-sin # Need this for rendering
+  layer_type: SIRENS # Need this for rendering
   embedding_size: 6
   nonlinearity: sin
   normalize: False # TODO: Not working when True with the jacobian calculation

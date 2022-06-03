@@ -47,9 +47,12 @@ at the boundary as I'm using dirichlet bcs for now.  I believe this is the best 
 ![Sod Shock Density](images/Density-discontinuous.png)
 ![Sod Shock Velocity](images/Velocity-discontinuous.png)
 
-# Following [SIRENS](https://arxiv.org/abs/2006.09661) style network
+## Following [SIRENS](https://arxiv.org/abs/2006.09661) style network
+SIRENS is just a standard MLP with a sinusoidal positional embedding at the input and sin wave activation functions.  In
+this particular case the model has 8 hidden layers where each hidden layer is 100 units wide.
 
-Add this shortly
+![Sod Shock Density](images/Density-SIRENS.png)
+![Sod Shock Velocity](images/Velocity-SIRENS.png)
 
 ## Training
 High order MLP
