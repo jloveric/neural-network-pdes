@@ -1,6 +1,6 @@
 mlp:
-  nonlinearity: null
-  layer_type: "continuous"
+  nonlinearity: sin
+  layer_type: "baseline"
   n: 3
   n_in: null
   n_out: null
@@ -9,7 +9,7 @@ mlp:
   rescale_output: False
   scale: 2.0
   normalize: False # TODO: Not working when True with the jacobian calculation
-  segments: 3
+  segments: null
   input:
     segments: ${mlp.segments}
     width: 2
@@ -18,8 +18,8 @@ mlp:
     width: 3
   hidden:
     segments: ${mlp.segments}
-    layers: 1
-    width: 10
+    layers: 8
+    width: 100
 
 # generate this many interior data points
 data_size: 10000
