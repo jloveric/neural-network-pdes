@@ -47,12 +47,16 @@ at the boundary as I'm using dirichlet bcs for now.  I believe this is the best 
 ![Sod Shock Density](images/Density-discontinuous.png)
 ![Sod Shock Velocity](images/Velocity-discontinuous.png)
 
+# Following [SIRENS](https://arxiv.org/abs/2006.09661) style network
+
+Add this shortly
+
 ## Training
 High order MLP
 ```
 python examples/high_order_euler.py gpus=0 mlp.periodicity=2
 ```
-Standard MLP following [Sirens](https://arxiv.org/abs/2006.09661) with sin waves and sin wave positional embedding.
+Standard MLP following [SIRENS](https://arxiv.org/abs/2006.09661) with sin waves and sin wave positional embedding.
 ```
 python examples/sirens_euler.py gpus=0 mlp.periodicity=2
 ```
