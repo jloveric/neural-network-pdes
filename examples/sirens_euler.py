@@ -63,7 +63,7 @@ class SirensNet(LightningModule):
             out_width=cfg.mlp.output.width,
             hidden_width=cfg.mlp.hidden.width,
             hidden_layers=cfg.mlp.hidden.layers,
-            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d(),
+            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
             non_linearity=nl,
         )
 

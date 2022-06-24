@@ -63,7 +63,7 @@ class Net(LightningModule):
             hidden_width=cfg.mlp.hidden.width,
             hidden_layers=cfg.mlp.hidden.layers,
             hidden_segments=cfg.mlp.hidden.segments,
-            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d(),
+            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
             non_linearity=nl,
         )
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
@@ -124,6 +124,7 @@ class Net(LightningModule):
             batch_size=self.cfg.batch_size,
             shuffle=True,
             num_workers=10,
+            drop_last=True
         )
         return trainloader
 
@@ -134,6 +135,7 @@ class Net(LightningModule):
             batch_size=self.cfg.batch_size,
             shuffle=False,
             num_workers=10,
+            drop_last=True
         )
         return testloader
 
