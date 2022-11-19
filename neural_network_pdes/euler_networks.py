@@ -124,7 +124,7 @@ class Net(LightningModule):
             batch_size=self.cfg.batch_size,
             shuffle=True,
             num_workers=10,
-            drop_last=True
+            drop_last=True,
         )
         return trainloader
 
@@ -135,7 +135,7 @@ class Net(LightningModule):
             batch_size=self.cfg.batch_size,
             shuffle=False,
             num_workers=10,
-            drop_last=True
+            drop_last=True,
         )
         return testloader
 

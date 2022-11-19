@@ -1,6 +1,6 @@
 import os
 import pytest
-from examples.euler import (
+from neural_network_pdes.euler import (
     euler_loss,
     interior_loss,
     left_dirichlet_bc_loss,

@@ -4,6 +4,7 @@ import os
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from pytorch_lightning import Trainer
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
 from neural_network_pdes.euler_networks import ImageSampler, generate_images, Net
