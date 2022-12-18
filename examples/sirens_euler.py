@@ -17,7 +17,7 @@ from neural_network_pdes.euler_networks import (
 )
 import torch
 from torch.nn import LazyBatchNorm1d
-import functorch
+from functorch import vmap, jacrev
 import math
 
 
@@ -30,11 +30,13 @@ class ClassicSinusoidalEmbedding(torch.nn.Module):
         self.dim = dim
 
     def forward(self, x):
+        #print('embedding.x.shape', x.shape)
         half_dim = self.dim // 2
         emb = math.log(10000) / (half_dim - 1)
         emb = torch.exp(torch.arange(half_dim, device=x.device) * -emb)
         emb = x.unsqueeze(-1) * emb.unsqueeze(0)
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
+        #print('emb.shape', emb.shape)
         return emb
 
 
@@ -75,8 +77,8 @@ class SirensNet(LightningModule):
 
     def forward(self, x):
         x = self._embedding_layer(x)
-        x = x.reshape(x.shape[0], -1)
-        y = self._mlp(x)
+        xm = x.reshape(x.shape[0], -1)
+        y = self._mlp(xm)
         return y
 
     def setup(self, stage: int):
@@ -98,21 +100,27 @@ class SirensNet(LightningModule):
         # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
         # that computes the gradient for each input output pair.  Shouldn't be this slow.
         # This should use vmap
+        
+        """
         for inp in x:
             inp = inp.unsqueeze(dim=0)
             jacobian = torch.autograd.functional.jacobian(
                 self, inp, create_graph=True, strict=False, vectorize=True
             )
             jacobian_list.append(jacobian)
+        """
 
-        gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
-
+        #gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
+        #print('gradients.shape', gradients.shape)
         # This currently fails, due to a bug in functorch
         # TODO: re-enable this in the future.
-        #jacobian = functorch.vmap(functorch.jacrev(self.forward))(x)
-
+        #print('x pre.shape', x.shape)
+        jacobian = vmap(jacrev(self.forward))(x.reshape(x.shape[0], 1, x.shape[1]))
+        nj = jacobian.reshape(-1, 3, 2)
+        #print('jacobian', jacobian.shape)
+        #exit(0)
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
-            x=x, q=y_hat, grad_q=gradients, targets=y
+            x=x, q=y_hat, grad_q=nj, targets=y
         )
 
         loss = in_loss + ic_loss + left_bc_loss + right_bc_loss

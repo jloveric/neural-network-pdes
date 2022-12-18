@@ -91,6 +91,8 @@ class Net(LightningModule):
         # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
         # that computes the gradient for each input output pair.  Shouldn't be this slow.
         # This should use vmap
+        
+        """
         for inp in x:
             inp = inp.unsqueeze(dim=0)
             jacobian = torch.autograd.functional.jacobian(
@@ -99,14 +101,16 @@ class Net(LightningModule):
             jacobian_list.append(jacobian)
 
         gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
+        """
 
         # This currently fails, due to a bug in functorch
         # TODO: re-enable this in the future.
         # jacobian = vmap(jacrev(self))(x)
         # print('jacobian', jacobian)
-
+        jacobian = vmap(jacrev(self.forward))(x.reshape(x.shape[0], 1, x.shape[1]))
+        nj = jacobian.reshape(-1, 3, 2)
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
-            x=x, q=y_hat, grad_q=gradients, targets=y
+            x=x, q=y_hat, grad_q=nj, targets=y
         )
 
         loss = in_loss + ic_loss + left_bc_loss + right_bc_loss
