@@ -18,7 +18,7 @@ from torch.nn import LazyBatchNorm1d
 import io
 import PIL.Image
 from torchvision import transforms
-import functorch
+from functorch import vmap, jacrev
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
 
@@ -102,7 +102,8 @@ class Net(LightningModule):
 
         # This currently fails, due to a bug in functorch
         # TODO: re-enable this in the future.
-        # jacobian = functorch.vmap(functorch.jacrev(self))(x)
+        # jacobian = vmap(jacrev(self))(x)
+        # print('jacobian', jacobian)
 
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y

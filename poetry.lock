@@ -260,22 +260,8 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
-name = "functorch"
-version = "1.13.0"
-description = "JAX-like composable function transforms for PyTorch"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-torch = ">=1.13.0,<1.13.1"
-
-[package.extras]
-aot = ["networkx"]
-
-[[package]]
 name = "high-order-layers-torch"
-version = "1.1.18"
+version = "1.2.0"
 description = "High order layers in pytorch"
 category = "main"
 optional = false
@@ -284,7 +270,7 @@ python-versions = ">=3.9,<4.0"
 [package.dependencies]
 hydra-core = ">=1.2.0,<2.0.0"
 pytorch-lightning = ">=1.8.1,<2.0.0"
-torch = ">=1.13.0,<2.0.0"
+torch = ">=1.13.1,<2.0.0"
 torch-optimizer = ">=0.3.0,<0.4.0"
 torchmetrics = ">=0.10.2,<0.11.0"
 
@@ -757,17 +743,17 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "torch"
-version = "1.13.0"
+version = "1.13.1"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 category = "main"
 optional = false
 python-versions = ">=3.7.0"
 
 [package.dependencies]
-nvidia-cublas-cu11 = "11.10.3.66"
-nvidia-cuda-nvrtc-cu11 = "11.7.99"
-nvidia-cuda-runtime-cu11 = "11.7.99"
-nvidia-cudnn-cu11 = "8.5.0.96"
+nvidia-cublas-cu11 = {version = "11.10.3.66", markers = "platform_system == \"Linux\""}
+nvidia-cuda-nvrtc-cu11 = {version = "11.7.99", markers = "platform_system == \"Linux\""}
+nvidia-cuda-runtime-cu11 = {version = "11.7.99", markers = "platform_system == \"Linux\""}
+nvidia-cudnn-cu11 = {version = "8.5.0.96", markers = "platform_system == \"Linux\""}
 typing-extensions = "*"
 
 [package.extras]
@@ -810,7 +796,7 @@ text = ["nltk (>=3.6)", "tqdm (>=4.41.0)", "regex (>=2021.9.24)"]
 
 [[package]]
 name = "torchvision"
-version = "0.14.0"
+version = "0.14.1"
 description = "image and video datasets and models for torch deep learning"
 category = "main"
 optional = false
@@ -820,7 +806,7 @@ python-versions = ">=3.7"
 numpy = "*"
 pillow = ">=5.3.0,<8.3.0 || >=8.4.0"
 requests = "*"
-torch = "1.13.0"
+torch = "1.13.1"
 typing-extensions = "*"
 
 [package.extras]
@@ -879,7 +865,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "3d5d2b19841cee065306c3808f1ca17fe93dcf42ab2bc1f5fd78ff5c219d6aae"
+content-hash = "bce27d2c8b8004ec7b618c340876913c096122e8d784c82ac11bddc497d3ed41"
 
 [metadata.files]
 aiohttp = []
@@ -912,7 +898,6 @@ fire = []
 fonttools = []
 frozenlist = []
 fsspec = []
-functorch = []
 high-order-layers-torch = []
 hydra-core = [
     {file = "hydra-core-1.2.0.tar.gz", hash = "sha256:4990721ce4ac69abafaffee566d6b63a54faa6501ecce65b338d3251446ff634"},
