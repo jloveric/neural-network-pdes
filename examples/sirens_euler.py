@@ -109,7 +109,7 @@ class SirensNet(LightningModule):
 
         # This currently fails, due to a bug in functorch
         # TODO: re-enable this in the future.
-        jacobian = functorch.vmap(functorch.jacrev(self.forward))(x)
+        #jacobian = functorch.vmap(functorch.jacrev(self.forward))(x)
 
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=gradients, targets=y
