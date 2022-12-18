@@ -261,7 +261,7 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "high-order-layers-torch"
-version = "1.2.0"
+version = "1.2.1"
 description = "High order layers in pytorch"
 category = "main"
 optional = false
@@ -865,7 +865,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "bce27d2c8b8004ec7b618c340876913c096122e8d784c82ac11bddc497d3ed41"
+content-hash = "204b08989d6d6405d61f4716db62bfc3fca5269035950c59caf12ae9fec2c9a5"
 
 [metadata.files]
 aiohttp = []
