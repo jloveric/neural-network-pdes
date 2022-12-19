@@ -19,7 +19,7 @@ mlp:
   hidden:
     segments: ${mlp.segments}
     layers: 3
-    width: 80
+    width: 60
 
 # generate this many interior data points
 data_size: 10000
@@ -34,3 +34,6 @@ train: True
 checkpoint: null
 rotations: 1 # NOT Implemented! 1 is x,y, 2 is x,y, x-y, x+y, greater includes additional rotations
 save_images: True
+
+defaults :
+  - optimizer : adam

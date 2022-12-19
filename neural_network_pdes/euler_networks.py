@@ -21,6 +21,9 @@ from torchvision import transforms
 from functorch import vmap, jacrev
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
+import logging 
+
+logger = logging.getLogger(__name__)
 
 
 class SinLayer(torch.nn.Module):
@@ -123,7 +126,36 @@ class Net(LightningModule):
         return testloader
 
     def configure_optimizers(self):
-        return optim.Adam(self.parameters(), lr=self.cfg.lr)
+        
+        optimizer = optim.Adam(
+            params=self.parameters(),
+            lr=self.cfg.optimizer.lr,
+        )
+
+        reduce_on_plateau = False
+        if self.cfg.optimizer.scheduler == "plateau":
+            logger.info("Reducing lr on plateau")
+            lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                patience=self.cfg.optimizer.patience,
+                factor=self.cfg.optimizer.factor,
+                verbose=True,
+            )
+            reduce_on_plateau = True
+        elif self.cfg.optimizer.scheduler == "exponential":
+            logger.info("Reducing lr exponentially")
+            lr_scheduler = optim.lr_scheduler.ExponentialLR(
+                optimizer, gamma=self.cfg.optimizer.gamma
+            )
+        else:
+            return optimizer
+
+        scheduler = {
+            "scheduler": lr_scheduler,
+            "reduce_on_plateau": reduce_on_plateau,
+            "monitor": "train_loss",
+        }
+        return [optimizer], [scheduler]
 
 
 class ImageSampler(Callback):
