@@ -1,4 +1,5 @@
 mlp:
+  style: transform # standard
   nonlinearity: null
   layer_type: "continuous"
   n: 2

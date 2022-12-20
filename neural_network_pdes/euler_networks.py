@@ -21,7 +21,8 @@ from torchvision import transforms
 from functorch import vmap, jacrev
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
-import logging 
+from neural_network_pdes.transform_network import transform_mlp
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -52,23 +53,46 @@ class Net(LightningModule):
             if cfg.mlp.nonlinearity is None
             else nonlinearity_options[cfg.mlp.nonlinearity]
         )
+        if cfg.mlp.style == "standard":
+            self.model = HighOrderMLP(
+                layer_type=cfg.mlp.layer_type,
+                n=cfg.mlp.n,
+                n_in=cfg.mlp.n_in,
+                n_hidden=cfg.mlp.n_in,
+                n_out=cfg.mlp.n_out,
+                in_width=cfg.mlp.input.width,
+                in_segments=cfg.mlp.input.segments,
+                out_width=cfg.mlp.output.width,
+                out_segments=cfg.mlp.output.segments,
+                hidden_width=cfg.mlp.hidden.width,
+                hidden_layers=cfg.mlp.hidden.layers,
+                hidden_segments=cfg.mlp.hidden.segments,
+                normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
+                non_linearity=nl,
+            )
+        elif cfg.mlp.style == "transform":
+            self.model = transform_mlp(
+                layer_type=cfg.mlp.layer_type,
+                in_width=cfg.mlp.input.width,
+                hidden_width=cfg.mlp.hidden.width,
+                out_width=cfg.mlp.output.width,
+                n=cfg.mlp.n,
+                n_in=cfg.mlp.n_in,
+                n_out=cfg.mlp.n_out,
+                n_hidden=cfg.mlp.n_hidden,
+                in_segments=cfg.mlp.input.segments,
+                hidden_segments=cfg.mlp.hidden.segments,
+                out_segments=cfg.mlp.output.segments,
+                hidden_layers=cfg.mlp.hidden.layers,
+                normalize=cfg.mlp.normalize,
+                scale=cfg.mlp.scale,
+                periodicity=cfg.mlp.periodicity
+            )
+        else:
+            raise ValueError(
+                f"Style should be 'standard' or 'transform', got {cfg.mlp.style}"
+            )
 
-        self.model = HighOrderMLP(
-            layer_type=cfg.mlp.layer_type,
-            n=cfg.mlp.n,
-            n_in=cfg.mlp.n_in,
-            n_hidden=cfg.mlp.n_in,
-            n_out=cfg.mlp.n_out,
-            in_width=cfg.mlp.input.width,
-            in_segments=cfg.mlp.input.segments,
-            out_width=cfg.mlp.output.width,
-            out_segments=cfg.mlp.output.segments,
-            hidden_width=cfg.mlp.hidden.width,
-            hidden_layers=cfg.mlp.hidden.layers,
-            hidden_segments=cfg.mlp.hidden.segments,
-            normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
-            non_linearity=nl,
-        )
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
 
@@ -87,7 +111,7 @@ class Net(LightningModule):
         x, y = batch
         x.requires_grad_(True)
         y_hat = self(x)
-        
+
         jacobian = vmap(jacrev(self.forward))(x.reshape(x.shape[0], 1, x.shape[1]))
         nj = jacobian.reshape(-1, 3, 2)
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
@@ -126,7 +150,7 @@ class Net(LightningModule):
         return testloader
 
     def configure_optimizers(self):
-        
+
         optimizer = optim.Adam(
             params=self.parameters(),
             lr=self.cfg.optimizer.lr,

@@ -47,7 +47,7 @@ def fixed_rotation_layer(n: int):
     return layer
 
 
-def rotation_transform_network(
+def transform_mlp(
     layer_type: str,
     in_width: int,
     hidden_width: int,
@@ -85,5 +85,5 @@ def rotation_transform_network(
         periodicity=periodicity
     )
     tl = [fixed_input, mlp]
-    model = torch.nn.ModuleList(tl)
+    model = torch.nn.Sequential(*tl)
     return model
