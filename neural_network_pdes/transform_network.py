@@ -41,7 +41,7 @@ def fixed_rotation_layer(n: int):
         temp[i] = 1
         combos.append(temp)
 
-    layer = torch.nn.Linear(n, n*n, bias=False)
+    layer = torch.nn.Linear(n, n * n, bias=False)
     weights = torch.tensor(combos)
     layer.weight = torch.nn.Parameter(weights, requires_grad=False)
     return layer
@@ -62,7 +62,7 @@ def transform_mlp(
     hidden_layers: int,
     scale: float,
     periodicity: float,
-    normalize:bool=False
+    normalize: bool = False,
 ) -> torch.nn.Module:
 
     fixed_input = fixed_rotation_layer(n=in_width)
@@ -73,7 +73,7 @@ def transform_mlp(
         n_in=n_in,
         n_hidden=n_hidden,
         n_out=n_out,
-        in_width=in_width*in_width,
+        in_width=in_width * in_width,
         in_segments=in_segments,
         out_width=out_width,
         out_segments=out_segments,
@@ -82,7 +82,7 @@ def transform_mlp(
         hidden_segments=hidden_segments,
         normalization=None if normalize is False else torch.nn.LazyBatchNorm1d,
         scale=scale,
-        periodicity=periodicity
+        periodicity=periodicity,
     )
     tl = [fixed_input, mlp]
     model = torch.nn.Sequential(*tl)

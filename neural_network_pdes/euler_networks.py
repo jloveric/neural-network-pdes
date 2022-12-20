@@ -86,7 +86,7 @@ class Net(LightningModule):
                 hidden_layers=cfg.mlp.hidden.layers,
                 normalize=cfg.mlp.normalize,
                 scale=cfg.mlp.scale,
-                periodicity=cfg.mlp.periodicity
+                periodicity=cfg.mlp.periodicity,
             )
         else:
             raise ValueError(

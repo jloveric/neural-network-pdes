@@ -30,13 +30,13 @@ class ClassicSinusoidalEmbedding(torch.nn.Module):
         self.dim = dim
 
     def forward(self, x):
-        #print('embedding.x.shape', x.shape)
+        # print('embedding.x.shape', x.shape)
         half_dim = self.dim // 2
         emb = math.log(10000) / (half_dim - 1)
         emb = torch.exp(torch.arange(half_dim, device=x.device) * -emb)
         emb = x.unsqueeze(-1) * emb.unsqueeze(0)
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
-        #print('emb.shape', emb.shape)
+        # print('emb.shape', emb.shape)
         return emb
 
 
@@ -100,7 +100,7 @@ class SirensNet(LightningModule):
         # the gradient of all the batch inputs vs all the batch outputs (which is mostly zeros).  They need an operation
         # that computes the gradient for each input output pair.  Shouldn't be this slow.
         # This should use vmap
-        
+
         """
         for inp in x:
             inp = inp.unsqueeze(dim=0)
@@ -110,15 +110,15 @@ class SirensNet(LightningModule):
             jacobian_list.append(jacobian)
         """
 
-        #gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
-        #print('gradients.shape', gradients.shape)
+        # gradients = torch.reshape(torch.stack(jacobian_list), (-1, 3, 2))
+        # print('gradients.shape', gradients.shape)
         # This currently fails, due to a bug in functorch
         # TODO: re-enable this in the future.
-        #print('x pre.shape', x.shape)
+        # print('x pre.shape', x.shape)
         jacobian = vmap(jacrev(self.forward))(x.reshape(x.shape[0], 1, x.shape[1]))
         nj = jacobian.reshape(-1, 3, 2)
-        #print('jacobian', jacobian.shape)
-        #exit(0)
+        # print('jacobian', jacobian.shape)
+        # exit(0)
         in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
             x=x, q=y_hat, grad_q=nj, targets=y
         )
