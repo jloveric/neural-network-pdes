@@ -1,7 +1,7 @@
 mlp:
   style: transform # standard
   nonlinearity: null
-  layer_type: "continuous"
+  layer_type: "discontinuous"
   n: 2
   n_in: null
   n_out: null

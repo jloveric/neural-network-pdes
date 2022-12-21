@@ -151,7 +151,7 @@ class Net(LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = optim.Adam(
+        optimizer = optim.AdamW(
             params=self.parameters(),
             lr=self.cfg.optimizer.lr,
         )

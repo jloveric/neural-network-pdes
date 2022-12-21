@@ -7,13 +7,6 @@ from high_order_layers_torch.networks import HighOrderMLP
 from typing import Optional
 
 
-def copy_layer():
-    layer = torch.nn.Linear(2, 2, bias=False)
-    weights = torch.tensor([[1, 0], [0, 1]])
-    layer.weight = torch.nn.Parameter(weights, requires_grad=False)
-    return layer
-
-
 def fixed_rotation_layer(n: int):
     """
     Take n inputs and compute all the variations, n_i+n_j, n_i-n_j
