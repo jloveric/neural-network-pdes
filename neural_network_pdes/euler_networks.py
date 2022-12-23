@@ -41,6 +41,8 @@ nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer()}
 class Net(LightningModule):
     def __init__(self, cfg: DictConfig):
         super().__init__()
+        self.automatic_optimization = False
+
         self.save_hyperparameters(cfg)
         self.cfg = cfg
 
@@ -108,6 +110,8 @@ class Net(LightningModule):
         )
 
     def training_step(self, batch: Tensor, batch_idx: int):
+        optimizer = self.optimizers()
+
         x, y = batch
         x.requires_grad_(True)
         y_hat = self(x)
@@ -126,7 +130,13 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss)
         self.log(f"train_loss", loss, prog_bar=True)
 
-        return loss
+        self.manual_backward(loss)
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        smooth_discontinuous_network(self, factor=self.cfg.factor)
+
 
     def train_dataloader(self):
         trainloader = torch.utils.data.DataLoader(

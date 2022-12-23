@@ -19,16 +19,19 @@ mlp:
     width: 3
   hidden:
     segments: ${mlp.segments}
-    layers: 3
-    width: 60
+    layers: 2
+    width: 40
 
 # generate this many interior data points
 data_size: 10000
 
 max_epochs: 100
 gpus: 1
-lr: 1e-3
+lr: 1e-2
 batch_size: 128
+
+# decay factor for discontinuities
+factor: 0.01
 
 # Are you training? Otherwise plot the result
 train: True
