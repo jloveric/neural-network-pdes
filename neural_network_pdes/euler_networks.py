@@ -21,6 +21,10 @@ from torchvision import transforms
 from functorch import vmap, jacrev
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
+
+import neural_network_pdes.euler as pform
+import neural_network_pdes.euler_conservative as cform
+
 from neural_network_pdes.transform_network import transform_mlp
 import logging
 
@@ -45,6 +49,8 @@ class Net(LightningModule):
 
         self.save_hyperparameters(cfg)
         self.cfg = cfg
+
+        self._gamma = cfg.physics.gamma
 
         # TODO: Add a fixed layer after the input layer that
         # produces [x, t, (x+t), (x-t)] with no weight adjustment
@@ -101,13 +107,24 @@ class Net(LightningModule):
     def forward(self, x):
         return self.model(x)
 
+    def flux(self, x) :
+        return cform.flux(self.forward(x), gamma=self._gamma)
+
     def setup(self, stage: int):
-        self.train_dataset = PDEDataset(
-            size=self.cfg.data_size, rotations=self.cfg.rotations
-        )
-        self.test_dataset = PDEDataset(
-            size=self.cfg.data_size, rotations=self.cfg.rotations
-        )
+        if self.cfg.form =="conservative" :
+            self.train_dataset = cform.PDEDataset(
+                size=self.cfg.data_size, rotations=self.cfg.rotations
+            )
+            self.test_dataset = cform.PDEDataset(
+                size=self.cfg.data_size, rotations=self.cfg.rotations
+            )
+        else :
+            self.train_dataset = pform.PDEDataset(
+                size=self.cfg.data_size, rotations=self.cfg.rotations
+            )
+            self.test_dataset = pform.PDEDataset(
+                size=self.cfg.data_size, rotations=self.cfg.rotations
+            )
 
     def training_step(self, batch: Tensor, batch_idx: int):
         optimizer = self.optimizers()
@@ -116,11 +133,23 @@ class Net(LightningModule):
         x.requires_grad_(True)
         y_hat = self(x)
 
-        jacobian = vmap(jacrev(self.forward))(x.reshape(x.shape[0], 1, x.shape[1]))
+        xf = x.reshape(x.shape[0], 1, x.shape[1])
+        jacobian = vmap(jacrev(self.forward))(xf)
         nj = jacobian.reshape(-1, 3, 2)
-        in_loss, ic_loss, left_bc_loss, right_bc_loss = euler_loss(
-            x=x, q=y_hat, grad_q=nj, targets=y
-        )
+        
+        if self.cfg.form == "conservative" :
+            flux_jacobian = vmap(jacrev(self.flux))(xf).reshape(-1,3,2)
+            
+            in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
+                x=x, q=y_hat, grad_q=nj, grad_f=flux_jacobian, targets=y
+            )
+        elif self.cfg.form =="primitive" :
+            
+            in_loss, ic_loss, left_bc_loss, right_bc_loss = pform.euler_loss(
+                x=x, q=y_hat, grad_q=nj, targets=y
+            )
+        else :
+            raise ValueError(f"form should be conservative or primitive")
 
         loss = in_loss + ic_loss + left_bc_loss + right_bc_loss
 

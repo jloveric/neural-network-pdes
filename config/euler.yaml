@@ -19,15 +19,21 @@ mlp:
     width: 3
   hidden:
     segments: ${mlp.segments}
-    layers: 2
-    width: 40
+    layers: 3
+    width: 20
+
+physics :
+  gamma : 1.4
+
+# Form of equations, conservative or primitive
+form: "conservative"
 
 # generate this many interior data points
 data_size: 10000
 
 max_epochs: 100
 gpus: 1
-lr: 1e-2
+lr: 1e-3
 batch_size: 128
 
 # decay factor for discontinuities
