@@ -19,7 +19,7 @@ mlp:
     width: 3
   hidden:
     segments: ${mlp.segments}
-    layers: 3
+    layers: 2
     width: 20
 
 physics :
@@ -37,7 +37,7 @@ lr: 1e-3
 batch_size: 128
 
 # decay factor for discontinuities
-factor: 0.01
+factor: 0.001
 
 # Are you training? Otherwise plot the result
 train: True

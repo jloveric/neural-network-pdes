@@ -166,6 +166,9 @@ class Net(LightningModule):
 
         smooth_discontinuous_network(self, factor=self.cfg.factor)
 
+    def training_epoch_end(self, outputs):
+        sch = self.lr_schedulers()
+        sch.step(self.trainer.callback_metrics["train_loss"])
 
     def train_dataloader(self):
         trainloader = torch.utils.data.DataLoader(
@@ -190,7 +193,7 @@ class Net(LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = optim.AdamW(
+        optimizer = optim.Adam(
             params=self.parameters(),
             lr=self.cfg.optimizer.lr,
         )
@@ -301,10 +304,14 @@ def generate_images(model: nn.Module, save_to: str = None, layer_type: str = Non
             image = PIL.Image.open(buf)
             image = transforms.ToTensor()(image)
             image_list.append(image)
+        plt.close()
 
     if save_to != "memory":
         plt.show()
     else:
+        plt.close()
         return image_list
+
+    plt.close()
 
     return None
