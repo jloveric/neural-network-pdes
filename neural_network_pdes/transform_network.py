@@ -40,6 +40,17 @@ def fixed_rotation_layer(n: int):
     return layer
 
 
+class ReshapeNormalize(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.norm = torch.nn.LazyInstanceNorm1d(track_running_stats=False)
+
+    def __call__(self, x):
+        y = x.unsqueeze(1)
+        ans = self.norm(y).squeeze(1)
+        return ans
+
+
 def transform_mlp(
     layer_type: str,
     in_width: int,
@@ -55,7 +66,7 @@ def transform_mlp(
     hidden_layers: int,
     scale: float,
     periodicity: float,
-    normalize: bool = False,
+    normalization: torch.nn.Module,
 ) -> torch.nn.Module:
 
     fixed_input = fixed_rotation_layer(n=in_width)
@@ -73,7 +84,7 @@ def transform_mlp(
         hidden_width=hidden_width,
         hidden_layers=hidden_layers,
         hidden_segments=hidden_segments,
-        normalization=None if normalize is False else torch.nn.LazyBatchNorm1d,
+        normalization=normalization,
         scale=scale,
         periodicity=periodicity,
     )

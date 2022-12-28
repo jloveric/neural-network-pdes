@@ -14,18 +14,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
-from torch.nn import LazyBatchNorm1d
+from torch.nn import LazyBatchNorm1d, LazyInstanceNorm1d, LayerNorm
 import io
 import PIL.Image
 from torchvision import transforms
-from functorch import vmap, jacrev
+from functorch import vmap, jacrev, hessian
+from functorch.experimental import replace_all_batch_norm_modules_
 
 from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
 
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
 
-from neural_network_pdes.transform_network import transform_mlp
+from neural_network_pdes.transform_network import transform_mlp, ReshapeNormalize
 import logging
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ class Net(LightningModule):
                 hidden_segments=cfg.mlp.hidden.segments,
                 normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
                 non_linearity=nl,
+                periodicity=cfg.mlp.periodicity,
             )
         elif cfg.mlp.style == "transform":
             self.model = transform_mlp(
@@ -92,7 +94,9 @@ class Net(LightningModule):
                 hidden_segments=cfg.mlp.hidden.segments,
                 out_segments=cfg.mlp.output.segments,
                 hidden_layers=cfg.mlp.hidden.layers,
-                normalize=cfg.mlp.normalize,
+                normalization=None
+                if cfg.mlp.normalize is False
+                else ReshapeNormalize,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
             )
@@ -101,24 +105,26 @@ class Net(LightningModule):
                 f"Style should be 'standard' or 'transform', got {cfg.mlp.style}"
             )
 
+        # replace_all_batch_norm_modules_(self.model)
+
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
 
     def forward(self, x):
         return self.model(x)
 
-    def flux(self, x) :
+    def flux(self, x):
         return cform.flux(self.forward(x), gamma=self._gamma)
 
     def setup(self, stage: int):
-        if self.cfg.form =="conservative" :
+        if self.cfg.form == "conservative":
             self.train_dataset = cform.PDEDataset(
                 size=self.cfg.data_size, rotations=self.cfg.rotations
             )
             self.test_dataset = cform.PDEDataset(
                 size=self.cfg.data_size, rotations=self.cfg.rotations
             )
-        else :
+        else:
             self.train_dataset = pform.PDEDataset(
                 size=self.cfg.data_size, rotations=self.cfg.rotations
             )
@@ -130,25 +136,33 @@ class Net(LightningModule):
         optimizer = self.optimizers()
 
         x, y = batch
+
         x.requires_grad_(True)
         y_hat = self(x)
 
         xf = x.reshape(x.shape[0], 1, x.shape[1])
         jacobian = vmap(jacrev(self.forward))(xf)
         nj = jacobian.reshape(-1, 3, 2)
-        
-        if self.cfg.form == "conservative" :
-            flux_jacobian = vmap(jacrev(self.flux))(xf).reshape(-1,3,2)
-            
+
+        if self.cfg.form == "conservative":
+            flux_jacobian = vmap(jacrev(self.flux))(xf).reshape(-1, 3, 2)
+            hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
+
             in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
-                x=x, q=y_hat, grad_q=nj, grad_f=flux_jacobian, targets=y
+                x=x,
+                q=y_hat,
+                grad_q=nj,
+                grad_f=flux_jacobian,
+                hessian=hess,
+                artificial_viscosity=self.cfg.physics.artificial_viscosity,
+                targets=y,
             )
-        elif self.cfg.form =="primitive" :
-            
+        elif self.cfg.form == "primitive":
+
             in_loss, ic_loss, left_bc_loss, right_bc_loss = pform.euler_loss(
                 x=x, q=y_hat, grad_q=nj, targets=y
             )
-        else :
+        else:
             raise ValueError(f"form should be conservative or primitive")
 
         loss = in_loss + ic_loss + left_bc_loss + right_bc_loss

@@ -16,7 +16,7 @@ def pde_grid():
 
 
 class PDEDataset(Dataset):
-    def __init__(self, size: int = 10000, rotations: int = 1, gamma:float=1.4):
+    def __init__(self, size: int = 10000, rotations: int = 1, gamma: float = 1.4):
 
         self._gamma = gamma
 
@@ -46,9 +46,8 @@ class PDEDataset(Dataset):
         p = torch.where(x < 0, 1.0, 0.1)
         u = torch.where(x < 0, 0.0, 0.0)
 
-        mv = rho*u
-        energy =   (p/(self._gamma-1.0)) +0.5*mv*mv/rho
-
+        mv = rho * u
+        energy = (p / (self._gamma - 1.0)) + 0.5 * mv * mv / rho
 
         self.input = torch.cat([x, t], dim=1)
         self.output = torch.cat([rho, mv, energy], dim=1)
@@ -77,38 +76,46 @@ def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
     diff = targets - outputs
     return torch.dot(diff.flatten(), diff.flatten())
 
-def pressure(q:Tensor, gamma:float) :
-    rho = q[:,0]
-    mx = q[:,1]
-    en = q[:,2]
 
-    p = (gamma-1.0)*(en-0.5*(mx*mx/rho))
+def pressure(q: Tensor, gamma: float):
+    rho = q[:, 0]
+    mx = q[:, 1]
+    en = q[:, 2]
+
+    p = (gamma - 1.0) * (en - 0.5 * (mx * mx / rho))
     return p
 
-def flux(q:Tensor, gamma: float=1.4) :
 
+def flux(q: Tensor, gamma: float = 1.4):
 
     p = pressure(q=q, gamma=gamma)
-    rho = q[:,0]
-    mx = q[:,1]
+    rho = q[:, 0]
+    mx = q[:, 1]
     en = q[:, 2]
 
     f = torch.zeros_like(q, requires_grad=True)
     with torch.no_grad():
-        f[:,0] = mx
-        f[:,1] = (mx*mx/rho)+p
-        f[:,2] = mx*(en+p)/rho
+        f[:, 0] = mx
+        f[:, 1] = (mx * mx / rho) + p
+        f[:, 2] = mx * (en + p) / rho
     return f
 
-    
 
-def interior_loss(q: Tensor, grad_q: Tensor, grad_f: Tensor):
+def interior_loss(
+    q: Tensor,
+    grad_q: Tensor,
+    grad_f: Tensor,
+    hessian: Tensor,
+    artificial_viscosity: float = 0,
+):
     """
     Compute the loss (solve the PDE) for everywhere not
     on a boundary or an initial condition.
     Args :
         q : primitive variables vector
         grad_q : gradient of the primitive variables [dx,dt]
+        hessian : second order derivatives with respect to input
+        artificial_viscosity: add viscosity to ensure non entropy violating shocks
     Returns :
         difference of pde from 0 squared
     """
@@ -120,12 +127,15 @@ def interior_loss(q: Tensor, grad_q: Tensor, grad_f: Tensor):
 
     rt = grad_q[:, 0, 1]
     rx = grad_q[:, 0, 0]
+    rxx = hessian[:, 0, 0]
 
     mt = grad_q[:, 1, 1]
     mx = grad_q[:, 1, 0]
+    mxx = hessian[:, 1, 0]
 
     et = grad_q[:, 2, 1]
     ex = grad_q[:, 2, 0]
+    exx = hessian[:, 1, 0]
 
     frt = grad_f[:, 0, 1]
     frx = grad_f[:, 0, 0]
@@ -136,13 +146,12 @@ def interior_loss(q: Tensor, grad_q: Tensor, grad_f: Tensor):
     fet = grad_f[:, 2, 1]
     fex = grad_f[:, 2, 0]
 
-
     # Note, the equations below are multiplied by r to reduce the loss.
     r_eq = torch.stack(
         [
-            rt + frx,
-            mt+fmx,
-            et+fex,
+            rt + frx + artificial_viscosity * rxx,
+            mt + fmx + artificial_viscosity * mxx,
+            et + fex + artificial_viscosity * exx,
         ]
     )
 
@@ -151,7 +160,15 @@ def interior_loss(q: Tensor, grad_q: Tensor, grad_f: Tensor):
     return res
 
 
-def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, grad_f: Tensor, targets: Tensor):
+def euler_loss(
+    x: Tensor,
+    q: Tensor,
+    grad_q: Tensor,
+    grad_f: Tensor,
+    hessian: Tensor,
+    artificial_viscosity: float,
+    targets: Tensor,
+):
     """
     Compute the loss for the euler equations
 
@@ -159,6 +176,8 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, grad_f: Tensor, targets: Te
         x : netork inputs (positions and time).
         q : primitive variable vector.
         grad_q : gradients of primitive values [dx, dt]
+        hessian : hessian with respect to inputs
+        artificial_viscosity: add viscosity to prevent entropy violating shocks
         targets : target values (used for boundaries and initial conditions.)
     Returns :
         sum of losses.
@@ -172,7 +191,13 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, grad_f: Tensor, targets: Te
     ic_indexes = torch.nonzero(ic_mask)
     interior = (torch.logical_not(left_mask + right_mask + ic_mask),)
 
-    in_loss = interior_loss(q[interior], grad_q[interior], grad_f[interior])
+    in_loss = interior_loss(
+        q[interior],
+        grad_q[interior],
+        grad_f[interior],
+        hessian=hessian[interior],
+        artificial_viscosity=artificial_viscosity,
+    )
     ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes])
     left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
     right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])

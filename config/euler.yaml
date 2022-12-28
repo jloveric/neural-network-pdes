@@ -10,7 +10,7 @@ mlp:
   rescale_output: False
   scale: 2.0
   normalize: False # TODO: Not working when True with the jacobian calculation
-  segments: 4
+  segments: 2
   input:
     segments: ${mlp.segments}
     width: 2
@@ -19,11 +19,12 @@ mlp:
     width: 3
   hidden:
     segments: ${mlp.segments}
-    layers: 2
+    layers: 4
     width: 20
 
 physics :
   gamma : 1.4
+  artificial_viscosity: 0.01
 
 # Form of equations, conservative or primitive
 form: "conservative"
@@ -33,8 +34,7 @@ data_size: 10000
 
 max_epochs: 100
 gpus: 1
-lr: 1e-3
-batch_size: 128
+batch_size: 1024
 
 # decay factor for discontinuities
 factor: 0.001

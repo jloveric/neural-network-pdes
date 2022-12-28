@@ -10,6 +10,7 @@ from high_order_layers_torch.networks import *
 from neural_network_pdes.euler_networks import ImageSampler, generate_images, Net
 from pytorch_lightning.callbacks import LearningRateMonitor
 
+
 @hydra.main(config_path="../config", config_name="euler")
 def run_implicit_images(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
@@ -20,7 +21,7 @@ def run_implicit_images(cfg: DictConfig):
         checkpoint_callback = ModelCheckpoint(
             filename="{epoch:03d}", monitor="train_loss"
         )
-        lr_monitor = LearningRateMonitor(logging_interval='step')
+        lr_monitor = LearningRateMonitor(logging_interval="step")
 
         trainer = Trainer(
             max_epochs=cfg.max_epochs,
