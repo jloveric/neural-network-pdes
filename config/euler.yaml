@@ -26,8 +26,13 @@ physics :
   gamma : 1.4
   artificial_viscosity: 0.01
 
+
 # Form of equations, conservative or primitive
 form: "conservative"
+
+# Delta, offset for computing derivatives
+delta: 0.01
+delta_t: 0.01
 
 # generate this many interior data points
 data_size: 10000

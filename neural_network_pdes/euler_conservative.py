@@ -137,13 +137,13 @@ def interior_loss(
     ex = grad_q[:, 2, 0]
     exx = hessian[:, 1, 0]
 
-    frt = grad_f[:, 0, 1]
+    #frt = grad_f[:, 0, 1]
     frx = grad_f[:, 0, 0]
 
-    fmt = grad_f[:, 1, 1]
+    #fmt = grad_f[:, 1, 1]
     fmx = grad_f[:, 1, 0]
 
-    fet = grad_f[:, 2, 1]
+    #fet = grad_f[:, 2, 1]
     fex = grad_f[:, 2, 0]
 
     # Note, the equations below are multiplied by r to reduce the loss.
@@ -158,6 +158,8 @@ def interior_loss(
     # and then reduced by a factor 1000 to further shrink
     res = torch.dot(r_eq.flatten(), r_eq.flatten()) / 1
     return res
+
+
 
 
 def euler_loss(
