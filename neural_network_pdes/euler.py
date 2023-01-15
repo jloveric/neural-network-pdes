@@ -134,9 +134,18 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
     ic_indexes = torch.nonzero(ic_mask)
     interior = (torch.logical_not(left_mask + right_mask + ic_mask),)
 
-    in_loss = interior_loss(q[interior], grad_q[interior])
-    ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes])
-    left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
-    right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
+    in_size = len(q[interior])
+    ic_size = len(q[ic_indexes])
+    lbc_size = len(q[left_indexes])
+    rbc_size = len(q[right_indexes])
+
+    in_loss = interior_loss(q[interior], grad_q[interior]) / in_size
+    ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes]) / ic_size
+    left_bc_loss = (
+        left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) / lbc_size
+    )
+    right_bc_loss = (
+        right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes]) / rbc_size
+    )
 
     return in_loss, ic_loss, left_bc_loss, right_bc_loss
