@@ -73,3 +73,7 @@ python examples/high_order_euler.py checkpoint=\"outputs/2021-04-25/18-54-45/lig
 ```
 pytest tests
 ```
+
+## Papers of interest
+Papers for me to read solving similar problems
+[Solving Hydrodynamic Shock-Tube Problems Using Weighted Physics-Informed Neural Networks with Domain Extension](https://www.researchgate.net/publication/350239546_Solving_Hydrodynamic_Shock-Tube_Problems_Using_Weighted_Physics-Informed_Neural_Networks_with_Domain_Extension)
