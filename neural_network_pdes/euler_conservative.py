@@ -137,13 +137,13 @@ def interior_loss(
     ex = grad_q[:, 2, 0]
     exx = hessian[:, 1, 0]
 
-    #frt = grad_f[:, 0, 1]
+    # frt = grad_f[:, 0, 1]
     frx = grad_f[:, 0, 0]
 
-    #fmt = grad_f[:, 1, 1]
+    # fmt = grad_f[:, 1, 1]
     fmx = grad_f[:, 1, 0]
 
-    #fet = grad_f[:, 2, 1]
+    # fet = grad_f[:, 2, 1]
     fex = grad_f[:, 2, 0]
 
     # Note, the equations below are multiplied by r to reduce the loss.
@@ -158,8 +158,6 @@ def interior_loss(
     # and then reduced by a factor 1000 to further shrink
     res = torch.dot(r_eq.flatten(), r_eq.flatten()) / 1
     return res
-
-
 
 
 def euler_loss(
@@ -193,15 +191,28 @@ def euler_loss(
     ic_indexes = torch.nonzero(ic_mask)
     interior = (torch.logical_not(left_mask + right_mask + ic_mask),)
 
-    in_loss = interior_loss(
-        q[interior],
-        grad_q[interior],
-        grad_f[interior],
-        hessian=hessian[interior],
-        artificial_viscosity=artificial_viscosity,
+    in_size = len(q[interior])
+    ic_size = len(q[ic_indexes])
+    lbc_size = len(q[left_indexes])
+    rbc_size = len(q[right_indexes])
+
+    in_loss = (
+        interior_loss(
+            q[interior],
+            grad_q[interior],
+            grad_f[interior],
+            hessian=hessian[interior],
+            artificial_viscosity=artificial_viscosity,
+        )
+        / in_size
     )
-    ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes])
-    left_bc_loss = left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes])
-    right_bc_loss = right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes])
+
+    ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes]) / ic_size
+    left_bc_loss = (
+        left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) / lbc_size
+    )
+    right_bc_loss = (
+        right_dirichlet_bc_loss(q[right_indexes], targets[right_indexes]) / rbc_size
+    )
 
     return in_loss, ic_loss, left_bc_loss, right_bc_loss

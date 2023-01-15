@@ -149,13 +149,13 @@ class Net(LightningModule):
 
             xl = xf.clone()
             xr = xf.clone()
-            xl[:,0] = xf[:,0] - 0.5*self.cfg.delta
-            xr[:,0] = xf[:,0] + 0.5*self.cfg.delta
-            flux_left = vmap(jacrev(self.forward))(xl).reshape(-1,3,2)
-            flux_right = vmap(jacrev(self.forward))(xr).reshape(-1,3,2)
-            hess = (flux_right-flux_left)/self.cfg.delta
-            #print('hessian', torch.nonzero(hess))
-            #hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
+            xl[:, 0] = xf[:, 0] - 0.5 * self.cfg.delta
+            xr[:, 0] = xf[:, 0] + 0.5 * self.cfg.delta
+            flux_left = vmap(jacrev(self.forward))(xl).reshape(-1, 3, 2)
+            flux_right = vmap(jacrev(self.forward))(xr).reshape(-1, 3, 2)
+            hess = (flux_right - flux_left) / self.cfg.delta
+            # print('hessian', torch.nonzero(hess))
+            # hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
 
             in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
                 x=x,
@@ -166,26 +166,26 @@ class Net(LightningModule):
                 artificial_viscosity=self.cfg.physics.artificial_viscosity,
                 targets=y,
             )
-        elif self.cfg.form == "integral" :
-            
+        elif self.cfg.form == "integral":
+
             xl = xf.clone()
             xr = xf.clone()
 
             # dx
-            xl[:,0] = xf[:,0] - 0.5*self.cfg.delta
-            xr[:,0] = xf[:,0] + 0.5*self.cfg.delta
+            xl[:, 0] = xf[:, 0] - 0.5 * self.cfg.delta
+            xr[:, 0] = xf[:, 0] + 0.5 * self.cfg.delta
 
             # dt
             xtp = xf.clone()
             xtm = xf.clone()
-            #xtp[:,1]=xf[:,1]+0.5*self.cfg.delta_t
-            #xtm[:,1]=xf[:,1]-0.5*self.cfg.delta_t
+            # xtp[:,1]=xf[:,1]+0.5*self.cfg.delta_t
+            # xtm[:,1]=xf[:,1]-0.5*self.cfg.delta_t
 
-            flux_left= vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
-            flux_right= vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
-            
-            grad_f = (flux_right-flux_left)/self.cfg.delta
-            #print('hessian', torch.nonzero(hess))
+            flux_left = vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
+            flux_right = vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
+
+            grad_f = (flux_right - flux_left) / self.cfg.delta
+            # print('hessian', torch.nonzero(hess))
             hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
 
             in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
@@ -194,7 +194,7 @@ class Net(LightningModule):
                 grad_q=nj,
                 grad_f=grad_f,
                 hessian=hess,
-                artificial_viscosity=0, #self.cfg.physics.artificial_viscosity,
+                artificial_viscosity=0,  # self.cfg.physics.artificial_viscosity,
                 targets=y,
             )
         elif self.cfg.form == "primitive":
@@ -205,7 +205,11 @@ class Net(LightningModule):
         else:
             raise ValueError(f"form should be conservative or primitive")
 
-        loss = in_loss + ic_loss + left_bc_loss + right_bc_loss
+        loss = (
+            self.cfg.loss_weight.interior * in_loss
+            + self.cfg.loss_weight.initial * ic_loss
+            + self.cfg.loss_weight.boundary * (left_bc_loss + right_bc_loss)
+        )
 
         self.log(f"in_loss", in_loss)
         self.log(f"ic_loss", ic_loss)

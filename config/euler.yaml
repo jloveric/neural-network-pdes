@@ -9,7 +9,7 @@ mlp:
   periodicity: 2.0
   rescale_output: False
   scale: 2.0
-  normalize: False # TODO: Not working when True with the jacobian calculation
+  normalize: True # TODO: Not working when True with the jacobian calculation
   segments: 2
   input:
     segments: ${mlp.segments}
@@ -22,10 +22,15 @@ mlp:
     layers: 4
     width: 20
 
-physics :
-  gamma : 1.4
+physics:
+  gamma: 1.4
   artificial_viscosity: 0.01
 
+# pde weighting
+loss_weight:
+  interior: 1
+  boundary: 100
+  initial: 100
 
 # Form of equations, conservative or primitive
 form: "conservative"
@@ -50,5 +55,5 @@ checkpoint: null
 rotations: 1 # NOT Implemented! 1 is x,y, 2 is x,y, x-y, x+y, greater includes additional rotations
 save_images: True
 
-defaults :
-  - optimizer : adam
+defaults:
+  - optimizer: adam

@@ -80,3 +80,5 @@ Papers for me to read solving similar problems
 [Solving Hydrodynamic Shock-Tube Problems Using Weighted Physics-Informed Neural Networks with Domain Extension](https://www.researchgate.net/publication/350239546_Solving_Hydrodynamic_Shock-Tube_Problems_Using_Weighted_Physics-Informed_Neural_Networks_with_Domain_Extension)
 
 [Discontinuity Computing using Physics Informed Neural Networks](https://www.researchgate.net/profile/Li-Liu-72/publication/359480166_Discontinuity_Computing_using_Physics-Informed_Neural_Networks/links/6312a7da5eed5e4bd1404c25/Discontinuity-Computing-using-Physics-Informed-Neural-Networks.pdf)
+
+[ACTIVE LEARNING BASED SAMPLING FOR HIGH-DIMENSIONAL NONLINEAR PARTIAL DIFFERENTIAL EQUATIONS](https://arxiv.org/pdf/2112.13988.pdf)

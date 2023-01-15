@@ -20,6 +20,9 @@ high-order-layers-torch = "^1.2.4"
 pytest = "^6.2.5"
 black = {version = "^22.3.0", allow-prereleases = true}
 
+[tool.poetry.group.dev.dependencies]
+tensorboard = "^2.11.0"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
