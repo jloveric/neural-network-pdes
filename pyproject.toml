@@ -14,7 +14,7 @@ hydra-nevergrad-sweeper = "1.3.0.dev0"
 omegaconf = "^2.2.3"
 Pillow = "^9.3.0"
 torchvision = "^0.14.0"
-high-order-layers-torch = "^1.2.4"
+high-order-layers-torch = "^1.2.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

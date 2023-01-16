@@ -80,7 +80,9 @@ class Net(LightningModule):
                 hidden_width=cfg.mlp.hidden.width,
                 hidden_layers=cfg.mlp.hidden.layers,
                 hidden_segments=cfg.mlp.hidden.segments,
-                normalization=None if cfg.mlp.normalize is False else LazyBatchNorm1d,
+                normalization=None
+                if cfg.mlp.normalize is False
+                else MaxAbsNormalization,  # LazyBatchNorm1d,
                 non_linearity=nl,
                 periodicity=cfg.mlp.periodicity,
             )
@@ -100,7 +102,7 @@ class Net(LightningModule):
                 hidden_layers=cfg.mlp.hidden.layers,
                 normalization=None
                 if cfg.mlp.normalize is False
-                else ReshapeNormalize,  # LazyInstanceNorm1d,
+                else MaxAbsNormalization,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
             )
