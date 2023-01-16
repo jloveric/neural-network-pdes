@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 from torch.nn import LazyBatchNorm1d, LazyInstanceNorm1d, LayerNorm
+import matplotlib
 import io
 import PIL.Image
 from torchvision import transforms
@@ -34,6 +35,7 @@ from neural_network_pdes.transform_network import (
 import logging
 
 logger = logging.getLogger(__name__)
+matplotlib.use("Agg")
 
 
 class SinLayer(torch.nn.Module):

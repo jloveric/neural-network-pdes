@@ -9,7 +9,7 @@ mlp:
   periodicity: 2.0
   rescale_output: False
   scale: 2.0
-  normalize: True # TODO: Not working when True with the jacobian calculation
+  normalize: True
   segments: 3
   input:
     segments: ${mlp.segments}
@@ -32,8 +32,8 @@ loss_weight:
   discontinuity: 0.1
 
   interior: 1
-  boundary: 10
-  initial: 10
+  boundary: 100
+  initial: 100
 
 # Form of equations, conservative or primitive
 form: "conservative"
@@ -45,7 +45,7 @@ delta_t: 0.01
 # generate this many interior data points
 data_size: 10000
 
-max_epochs: 1000
+max_epochs: 10000
 gpus: 1
 batch_size: 1024
 
