@@ -59,4 +59,4 @@ rotations: 1 # NOT Implemented! 1 is x,y, 2 is x,y, x-y, x+y, greater includes a
 save_images: True
 
 defaults:
-  - optimizer: adam
+  - optimizer: adam # lbfgs

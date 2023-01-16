@@ -44,7 +44,7 @@ class SinLayer(torch.nn.Module):
         return torch.sin(x)
 
 
-nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer()}
+nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer(), "tanh": nn.Tanh()}
 
 
 class Net(LightningModule):
@@ -110,7 +110,7 @@ class Net(LightningModule):
                 out_width=cfg.mlp.output.width,
                 hidden_layers=cfg.mlp.hidden.layers,
                 hidden_width=cfg.mlp.output.width,
-                non_linearity=nn.Tanh(),
+                non_linearity=nl or nn.Tanh(),
                 normalization=None,
             )
         elif cfg.mlp.style == "transform-relu":
@@ -119,7 +119,7 @@ class Net(LightningModule):
                 out_width=cfg.mlp.output.width,
                 hidden_layers=cfg.mlp.hidden.layers,
                 hidden_width=cfg.mlp.output.width,
-                non_linearity=nn.Tanh(),
+                non_linearity=nl or nn.Tanh(),
                 normalization=None,
             )
         else:
@@ -276,10 +276,17 @@ class Net(LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = optim.Adam(
-            params=self.parameters(),
-            lr=self.cfg.optimizer.lr,
-        )
+        if self.cfg.optimizer.name == "adam":
+            optimizer = optim.Adam(
+                params=self.parameters(),
+                lr=self.cfg.optimizer.lr,
+            )
+        elif self.cfg.optimizer.name == "lbfgs":
+            optimizer = torch.optim.LBFGS(
+                self.parameters(),
+                lr=self.cfg.optimizer.lr,
+                max_iter=self.cfg.optimizer.max_iter,
+            )
 
         reduce_on_plateau = False
         if self.cfg.optimizer.scheduler == "plateau":

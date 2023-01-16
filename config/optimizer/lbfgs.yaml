@@ -1,0 +1,7 @@
+name: lbfgs
+lr: 1e-2
+max_iter: 20
+patience: 100
+factor: 0.1
+gamma: 0.9
+scheduler: plateau # exponential
