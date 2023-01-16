@@ -3,7 +3,7 @@ import torch
 from high_order_layers_torch.layers import (
     high_order_fc_layers,
 )
-from high_order_layers_torch.networks import HighOrderMLP
+from high_order_layers_torch.networks import HighOrderMLP, LowOrderMLP
 from typing import Optional
 
 
@@ -87,6 +87,30 @@ def transform_mlp(
         normalization=normalization,
         scale=scale,
         periodicity=periodicity,
+    )
+    tl = [fixed_input, mlp]
+    model = torch.nn.Sequential(*tl)
+    return model
+
+
+def transform_low_mlp(
+    in_width: int,
+    hidden_width: int,
+    out_width: int,
+    hidden_layers: int,
+    non_linearity: None,
+    normalization: torch.nn.Module,
+) -> torch.nn.Module:
+
+    fixed_input = fixed_rotation_layer(n=in_width)
+
+    mlp = LowOrderMLP(
+        in_width=in_width * in_width,
+        out_width=out_width,
+        hidden_width=hidden_width,
+        hidden_layers=hidden_layers,
+        non_linearity=non_linearity,
+        normalization=normalization,
     )
     tl = [fixed_input, mlp]
     model = torch.nn.Sequential(*tl)

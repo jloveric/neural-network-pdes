@@ -26,7 +26,11 @@ from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
 
-from neural_network_pdes.transform_network import transform_mlp, ReshapeNormalize
+from neural_network_pdes.transform_network import (
+    transform_mlp,
+    ReshapeNormalize,
+    transform_low_mlp,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -100,6 +104,24 @@ class Net(LightningModule):
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
             )
+        elif cfg.mlp.style == "relu":
+            self.model = LowOrderMLP(
+                in_width=cfg.mlp.input.width,
+                out_width=cfg.mlp.output.width,
+                hidden_layers=cfg.mlp.hidden.layers,
+                hidden_width=cfg.mlp.output.width,
+                non_linearity=nn.Tanh(),
+                normalization=None,
+            )
+        elif cfg.mlp.style == "transform-relu":
+            self.model = transform_low_mlp(
+                in_width=cfg.mlp.input.width,
+                out_width=cfg.mlp.output.width,
+                hidden_layers=cfg.mlp.hidden.layers,
+                hidden_width=cfg.mlp.output.width,
+                non_linearity=nn.Tanh(),
+                normalization=None,
+            )
         else:
             raise ValueError(
                 f"Style should be 'standard' or 'transform', got {cfg.mlp.style}"
@@ -165,6 +187,7 @@ class Net(LightningModule):
                 hessian=hess,
                 artificial_viscosity=self.cfg.physics.artificial_viscosity,
                 targets=y,
+                eps=self.cfg.loss_weight.discontinuity,
             )
         elif self.cfg.form == "integral":
 
@@ -184,6 +207,7 @@ class Net(LightningModule):
             flux_left = vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
             flux_right = vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
 
+            dudx = nj[:, 1, 0]
             grad_f = (flux_right - flux_left) / self.cfg.delta
             # print('hessian', torch.nonzero(hess))
             hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
@@ -222,6 +246,7 @@ class Net(LightningModule):
         optimizer.step()
         optimizer.zero_grad()
 
+        # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
 
     def training_epoch_end(self, outputs):

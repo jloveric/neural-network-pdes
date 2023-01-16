@@ -107,6 +107,7 @@ def interior_loss(
     grad_f: Tensor,
     hessian: Tensor,
     artificial_viscosity: float = 0,
+    eps: float = 0.1,
 ):
     """
     Compute the loss (solve the PDE) for everywhere not
@@ -116,6 +117,7 @@ def interior_loss(
         grad_q : gradient of the primitive variables [dx,dt]
         hessian : second order derivatives with respect to input
         artificial_viscosity: add viscosity to ensure non entropy violating shocks
+        eps : factor for discontinuity loss
     Returns :
         difference of pde from 0 squared
     """
@@ -130,12 +132,20 @@ def interior_loss(
     rxx = hessian[:, 0, 0]
 
     mt = grad_q[:, 1, 1]
-    mx = grad_q[:, 1, 0]
+    grad_mx = grad_q[:, 1, 0]
     mxx = hessian[:, 1, 0]
 
     et = grad_q[:, 2, 1]
     ex = grad_q[:, 2, 0]
     exx = hessian[:, 1, 0]
+
+    u = mx / r
+
+    drhodx = rx
+    dmdx = grad_mx
+    dudx = (dmdx - u * drhodx) / r
+
+    discontinuity = 1.0 / (eps * (torch.abs(dudx) - dudx) + 1)
 
     # frt = grad_f[:, 0, 1]
     frx = grad_f[:, 0, 0]
@@ -155,8 +165,10 @@ def interior_loss(
         ]
     )
 
+    square = discontinuity * r_eq * r_eq
+
     # and then reduced by a factor 1000 to further shrink
-    res = torch.dot(r_eq.flatten(), r_eq.flatten()) / 1
+    res = torch.sum(square.flatten())
     return res
 
 
@@ -168,6 +180,7 @@ def euler_loss(
     hessian: Tensor,
     artificial_viscosity: float,
     targets: Tensor,
+    eps: float = 0.1,
 ):
     """
     Compute the loss for the euler equations
@@ -179,6 +192,7 @@ def euler_loss(
         hessian : hessian with respect to inputs
         artificial_viscosity: add viscosity to prevent entropy violating shocks
         targets : target values (used for boundaries and initial conditions.)
+        eps: factor for computing discontinuity loss
     Returns :
         sum of losses.
     """
@@ -203,6 +217,7 @@ def euler_loss(
             grad_f[interior],
             hessian=hessian[interior],
             artificial_viscosity=artificial_viscosity,
+            eps=eps,
         )
         / in_size
     )

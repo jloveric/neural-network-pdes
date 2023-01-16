@@ -72,13 +72,14 @@ def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
     return torch.dot(diff.flatten(), diff.flatten())
 
 
-def interior_loss(q: Tensor, grad_q: Tensor):
+def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
     """
     Compute the loss (solve the PDE) for everywhere not
     on a boundary or an initial condition.
     Args :
         q : primitive variables vector
         grad_q : gradient of the primitive variables [dx,dt]
+        eps : shock detection factor
     Returns :
         difference of pde from 0 squared
     """
@@ -98,6 +99,8 @@ def interior_loss(q: Tensor, grad_q: Tensor):
     pt = grad_q[:, 2, 1]
     px = grad_q[:, 2, 0]
 
+    discontinuity = 1.0 / (eps * (torch.abs(ux) - ux) + 1)
+
     c2 = gamma * p / r
     # Note, the equations below are multiplied by r to reduce the loss.
     r_eq = torch.stack(
@@ -108,12 +111,14 @@ def interior_loss(q: Tensor, grad_q: Tensor):
         ]
     )
 
-    # and then reduced by a factor 1000 to further shrink
-    res = torch.dot(r_eq.flatten(), r_eq.flatten()) / 1
+    square = discontinuity * r_eq * r_eq
+
+    res = torch.sum(square.flatten())
+
     return res
 
 
-def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
+def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor, eps: float):
     """
     Compute the loss for the euler equations
 
@@ -122,6 +127,7 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor):
         q : primitive variable vector.
         grad_q : gradients of primitive values [dx, dt]
         targets : target values (used for boundaries and initial conditions.)
+        eps : shock detection factor
     Returns :
         sum of losses.
     """
