@@ -22,8 +22,6 @@ from torchvision import transforms
 from functorch import vmap, jacrev, hessian
 from functorch.experimental import replace_all_batch_norm_modules_
 
-from neural_network_pdes.euler import pde_grid, PDEDataset, euler_loss
-
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
 
@@ -224,11 +222,16 @@ class Net(LightningModule):
                 hessian=hess,
                 artificial_viscosity=0,  # self.cfg.physics.artificial_viscosity,
                 targets=y,
+                eps=self.cfg.loss_weight.discontinuity,
             )
         elif self.cfg.form == "primitive":
 
             in_loss, ic_loss, left_bc_loss, right_bc_loss = pform.euler_loss(
-                x=x, q=y_hat, grad_q=nj, targets=y
+                x=x,
+                q=y_hat,
+                grad_q=nj,
+                targets=y,
+                eps=self.cfg.loss_weight.discontinuity,
             )
         else:
             raise ValueError(f"form should be conservative or primitive")
@@ -338,7 +341,7 @@ class ImageSampler(Callback):
 def generate_images(model: nn.Module, save_to: str = None, layer_type: str = None):
 
     model.eval()
-    inputs = pde_grid().detach().to(model.device)
+    inputs = pform.pde_grid().detach().to(model.device)
     y_hat = model(inputs).detach().cpu().numpy()
     outputs = y_hat.reshape(100, 100, 3)
 

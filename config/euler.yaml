@@ -24,16 +24,16 @@ mlp:
 
 physics:
   gamma: 1.4
-  artificial_viscosity: 0.01
+  artificial_viscosity: 0.0
 
 # pde weighting
 loss_weight:
   # from the paper "Discontinuity Computing Using Physics-Informed Neural Networks"
-  discontinuity: 0.1
+  discontinuity: 0.0
 
-  interior: 1
-  boundary: 100
-  initial: 100
+  interior: 0.1
+  boundary: 10
+  initial: 10
 
 # Form of equations, conservative or primitive
 form: "conservative"

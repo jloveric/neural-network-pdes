@@ -106,7 +106,8 @@ def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
     r_eq = torch.stack(
         [
             rt + u * rx + r * ux,
-            r * (ut + u * ux + (1 / r) * px),
+            # Normalize the value before
+            (r * ut + r * u * ux + px),  # (ut + u * ux + (1 / r) * px),
             (pt + r * c2 * ux + u * px),
         ]
     )
@@ -145,7 +146,7 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor, eps: float
     lbc_size = len(q[left_indexes])
     rbc_size = len(q[right_indexes])
 
-    in_loss = interior_loss(q[interior], grad_q[interior]) / in_size
+    in_loss = interior_loss(q[interior], grad_q[interior], eps=eps) / in_size
     ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes]) / ic_size
     left_bc_loss = (
         left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) / lbc_size
