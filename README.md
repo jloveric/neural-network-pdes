@@ -56,6 +56,13 @@ this particular case the model has 8 hidden layers where each hidden layer is 10
 ![Sod Shock Density](images/Density-SIRENS.png)
 ![Sod Shock Velocity](images/Velocity-SIRENS.png)
 
+## Good parameters - still no contact discontinuity
+Using quadratic polynomial creates a sharper shock. Using a large number of input segments (20) and then
+just 2 for each following layer produces smooth results (no contact discontinuity though!). Primitive form
+of the equations seems to be working better than conservative form - conservative form pushes to the initial condition even when dropping loss weight at shocks (possible I've introduced another error in my code).
+```
+python examples/high_order_euler.py mlp.hidden.width=40 max_epochs=10000 mlp.segments=2 mlp.n=3 mlp.hidden.layers=2 factor=0.1 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=20 batch_size=512 form=primitive loss_weight.discontinuity=1.0 loss_weight.interior=0.1 optimizer=adamw
+```
 ## Training
 High order MLP
 ```
