@@ -106,6 +106,7 @@ class Net(LightningModule):
                 else MaxAbsNormalization,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
+                rotations=cfg.mlp.rotations
             )
         elif cfg.mlp.style == "high-order-input":
             layer_list = []
@@ -173,19 +174,11 @@ class Net(LightningModule):
 
     def setup(self, stage: int):
         if self.cfg.form == "conservative":
-            self.train_dataset = cform.PDEDataset(
-                size=self.cfg.data_size, rotations=self.cfg.rotations
-            )
-            self.test_dataset = cform.PDEDataset(
-                size=self.cfg.data_size, rotations=self.cfg.rotations
-            )
+            self.train_dataset = cform.PDEDataset(size=self.cfg.data_size)
+            self.test_dataset = cform.PDEDataset(size=self.cfg.data_size)
         else:
-            self.train_dataset = pform.PDEDataset(
-                size=self.cfg.data_size, rotations=self.cfg.rotations
-            )
-            self.test_dataset = pform.PDEDataset(
-                size=self.cfg.data_size, rotations=self.cfg.rotations
-            )
+            self.train_dataset = pform.PDEDataset(size=self.cfg.data_size)
+            self.test_dataset = pform.PDEDataset(size=self.cfg.data_size)
 
     def training_step(self, batch: Tensor, batch_idx: int):
         optimizer = self.optimizers()

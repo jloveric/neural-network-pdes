@@ -16,7 +16,7 @@ def pde_grid():
 
 
 class PDEDataset(Dataset):
-    def __init__(self, size: int = 10000, rotations: int = 1, gamma: float = 1.4):
+    def __init__(self, size: int = 10000, gamma: float = 1.4):
 
         self._gamma = gamma
 

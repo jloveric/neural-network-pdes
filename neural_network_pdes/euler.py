@@ -16,7 +16,7 @@ def pde_grid():
 
 
 class PDEDataset(Dataset):
-    def __init__(self, size: int = 10000, rotations: int = 1):
+    def __init__(self, size: int = 10000):
 
         # interior conditions
         x = 2.0 * torch.rand(size) - 1.0

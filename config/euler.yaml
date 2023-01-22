@@ -1,4 +1,5 @@
 mlp:
+  rotations: 2 # 1 is x,y, 2 is x,y, x-y, x+y, greater includes additional rotations
   style: transform # standard
   nonlinearity: null
   layer_type: "discontinuous"
@@ -55,7 +56,6 @@ factor: 0.001
 # Are you training? Otherwise plot the result
 train: True
 checkpoint: null
-rotations: 1 # NOT Implemented! 1 is x,y, 2 is x,y, x-y, x+y, greater includes additional rotations
 save_images: True
 
 defaults:
