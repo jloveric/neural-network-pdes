@@ -54,41 +54,6 @@ def fixed_rotation_layer(n: int, rotations: int = 2):
     return layer, output_width
 
 
-'''
-def fixed_rotation_layer(n: int, rotations: int = 2):
-    """
-    Take n inputs and compute all the variations, n_i+n_j, n_i-n_j
-    and create a layer that computes these with fixed weights. For
-    n=2, outputs [x, t, 0.5*(x+t), 0.5*(x-t)]
-    Args :
-        - n: The number of inputs, would be 2 for (x, t)
-    """
-
-    combos = []
-    for i in range(n):
-        for j in range(i + 1, n):
-            temp = [0] * n
-            temp[j] += 0.5
-            temp[i] += 0.5
-            combos.append(temp)
-
-            other = [0] * n
-            other[i] = 0.5
-            other[j] = -0.5
-            combos.append(other)
-
-    for i in range(n):
-        temp = [0] * n
-        temp[i] = 1
-        combos.append(temp)
-
-    layer = torch.nn.Linear(n, n * n, bias=False)
-    weights = torch.tensor(combos)
-    layer.weight = torch.nn.Parameter(weights, requires_grad=False)
-    return layer
-'''
-
-
 class ReshapeNormalize(torch.nn.Module):
     def __init__(self):
         super().__init__()
