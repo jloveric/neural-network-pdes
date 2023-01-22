@@ -15,6 +15,7 @@ Pillow = "^9.3.0"
 torchvision = "^0.14.0"
 high-order-layers-torch = "^1.2.7"
 pytorch-lightning = "^1.8.6"
+torch-optimizer = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

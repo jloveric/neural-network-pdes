@@ -107,7 +107,8 @@ def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
         [
             rt + u * rx + r * ux,
             # Normalize the value before
-            (r * ut + r * u * ux + px),  # (ut + u * ux + (1 / r) * px),
+            (r * ut + r * u * ux + px),
+            # (ut + u * ux + (1 / r) * px),
             (pt + r * c2 * ux + u * px),
         ]
     )

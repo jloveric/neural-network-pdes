@@ -105,7 +105,7 @@ def interior_loss(
     q: Tensor,
     grad_q: Tensor,
     grad_f: Tensor,
-    hessian: Tensor,
+    hessian: Tensor = None,
     artificial_viscosity: float = 0,
     eps: float = 0.1,
 ):
@@ -129,15 +129,15 @@ def interior_loss(
 
     rt = grad_q[:, 0, 1]
     rx = grad_q[:, 0, 0]
-    rxx = hessian[:, 0, 0]
+    # rxx = hessian[:, 0, 0]
 
     mt = grad_q[:, 1, 1]
     grad_mx = grad_q[:, 1, 0]
-    mxx = hessian[:, 1, 0]
+    # mxx = hessian[:, 1, 0]
 
     et = grad_q[:, 2, 1]
     ex = grad_q[:, 2, 0]
-    exx = hessian[:, 1, 0]
+    # exx = hessian[:, 1, 0]
 
     u = mx / r
 
@@ -159,9 +159,9 @@ def interior_loss(
     # Note, the equations below are multiplied by r to reduce the loss.
     r_eq = torch.stack(
         [
-            rt + frx + artificial_viscosity * rxx,
-            mt + fmx + artificial_viscosity * mxx,
-            et + fex + artificial_viscosity * exx,
+            rt + frx,  # + artificial_viscosity * rxx,
+            mt + fmx,  # + artificial_viscosity * mxx,
+            et + fex,  # + artificial_viscosity * exx,
         ]
     )
 
@@ -215,7 +215,7 @@ def euler_loss(
             q[interior],
             grad_q[interior],
             grad_f[interior],
-            hessian=hessian[interior],
+            # hessian=hessian[interior],
             artificial_viscosity=artificial_viscosity,
             eps=eps,
         )

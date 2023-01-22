@@ -1,4 +1,5 @@
 from typing import List
+import torch_optimizer as alt_optim
 
 import os
 from omegaconf import DictConfig, OmegaConf
@@ -106,6 +107,33 @@ class Net(LightningModule):
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
             )
+        elif cfg.mlp.style == "high-order-input":
+            layer_list = []
+            input_layer = high_order_fc_layers(
+                layer_type=cfg.mlp.layer_type,
+                n=cfg.mlp.n,
+                in_features=cfg.mlp.input.width,
+                out_features=cfg.mlp.hidden.width,
+                segments=cfg.mlp.input.segments,
+            )
+            layer_list.append(input_layer)
+
+            # if normalization is not None:
+            #    layer_list.append(normalization())
+
+            lower_layers = LowOrderMLP(
+                in_width=cfg.mlp.hidden.width,
+                out_width=cfg.mlp.output.width,
+                hidden_width=cfg.mlp.hidden.width,
+                hidden_layers=cfg.mlp.hidden.layers - 1,
+                non_linearity=nl,
+                normalization=None
+                if cfg.mlp.normalize is False
+                else LazyInstanceNorm1d,
+            )
+            layer_list.append(lower_layers)
+
+            self.model = nn.Sequential(*layer_list)
         elif cfg.mlp.style == "relu":
             self.model = LowOrderMLP(
                 in_width=cfg.mlp.input.width,
@@ -133,6 +161,9 @@ class Net(LightningModule):
 
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
+        self.create_graph = False
+        if self.cfg.optimizer.name in ["adahessian"]:
+            self.create_graph = True
 
     def forward(self, x):
         return self.model(x)
@@ -171,13 +202,13 @@ class Net(LightningModule):
         if self.cfg.form == "conservative":
             flux_jacobian = vmap(jacrev(self.flux))(xf).reshape(-1, 3, 2)
 
-            xl = xf.clone()
-            xr = xf.clone()
-            xl[:, 0] = xf[:, 0] - 0.5 * self.cfg.delta
-            xr[:, 0] = xf[:, 0] + 0.5 * self.cfg.delta
-            flux_left = vmap(jacrev(self.forward))(xl).reshape(-1, 3, 2)
-            flux_right = vmap(jacrev(self.forward))(xr).reshape(-1, 3, 2)
-            hess = (flux_right - flux_left) / self.cfg.delta
+            # xl = xf.clone()
+            # xr = xf.clone()
+            # xl[:, 0] = xf[:, 0] - 0.5 * self.cfg.delta
+            # xr[:, 0] = xf[:, 0] + 0.5 * self.cfg.delta
+            # flux_left = vmap(jacrev(self.forward))(xl).reshape(-1, 3, 2)
+            # flux_right = vmap(jacrev(self.forward))(xr).reshape(-1, 3, 2)
+            # hess = (flux_right - flux_left) / self.cfg.delta
             # print('hessian', torch.nonzero(hess))
             # hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
 
@@ -186,7 +217,7 @@ class Net(LightningModule):
                 q=y_hat,
                 grad_q=nj,
                 grad_f=flux_jacobian,
-                hessian=hess,
+                hessian=None,  # hess,
                 artificial_viscosity=self.cfg.physics.artificial_viscosity,
                 targets=y,
                 eps=self.cfg.loss_weight.discontinuity,
@@ -206,20 +237,20 @@ class Net(LightningModule):
             # xtp[:,1]=xf[:,1]+0.5*self.cfg.delta_t
             # xtm[:,1]=xf[:,1]-0.5*self.cfg.delta_t
 
-            flux_left = vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
-            flux_right = vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
+            # flux_left = vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
+            # flux_right = vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
 
             dudx = nj[:, 1, 0]
             grad_f = (flux_right - flux_left) / self.cfg.delta
             # print('hessian', torch.nonzero(hess))
-            hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
+            # hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
 
             in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
                 x=x,
                 q=y_hat,
                 grad_q=nj,
                 grad_f=grad_f,
-                hessian=hess,
+                hessian=None,  # hess,
                 artificial_viscosity=0,  # self.cfg.physics.artificial_viscosity,
                 targets=y,
                 eps=self.cfg.loss_weight.discontinuity,
@@ -248,7 +279,7 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss)
         self.log(f"train_loss", loss, prog_bar=True)
 
-        self.manual_backward(loss)
+        self.manual_backward(loss, create_graph=self.create_graph)
 
         optimizer.step()
         optimizer.zero_grad()
@@ -283,10 +314,23 @@ class Net(LightningModule):
 
     def configure_optimizers(self):
 
-        if self.cfg.optimizer.name == "adam":
+        if self.cfg.optimizer.name == "adahessian":
+            optimizer = alt_optim.Adahessian(
+                self.parameters(),
+                lr=self.cfg.optimizer.lr,
+                betas=self.cfg.optimizer.betas,
+                eps=self.cfg.optimizer.eps,
+                weight_decay=self.cfg.optimizer.weight_decay,
+                hessian_power=self.cfg.optimizer.hessian_power,
+            )
+        elif self.cfg.optimizer.name == "adam":
             optimizer = optim.Adam(
                 params=self.parameters(),
                 lr=self.cfg.optimizer.lr,
+            )
+        elif self.cfg.optimizer.name == "adamw":
+            optimizer = torch.optim.AdamW(
+                params=self.parameters(), lr=self.cfg.optimizer.lr
             )
         elif self.cfg.optimizer.name == "lbfgs":
             optimizer = torch.optim.LBFGS(
