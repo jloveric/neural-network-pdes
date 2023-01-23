@@ -12,9 +12,14 @@ def fixed_rotation_layer(n: int, rotations: int = 2):
     """
     Take n inputs and compute all the variations, n_i+n_j, n_i-n_j
     and create a layer that computes these with fixed weights. For
-    n=2, and rotations=2 outputs [x, t, 0.5*(x+t), 0.5*(x-t)]
+    n=2, and rotations=2 outputs [x, t, a(x+t), a(x-t)].  Returns a fixed
+    linear rotation layer (one that is not updated by gradients)
     Args :
         - n: The number of inputs, would be 2 for (x, t)
+        - rotations: Number of rotations to apply pair by based on the inputs. So
+        for input [x, y] and rotations=3, rotations are [x, y,a*(x+t), a*(x-t) ]
+    Returns :
+        A tuple containing the rotation layer and the output width of the layer
     """
 
     if rotations < 1:
@@ -117,12 +122,15 @@ def transform_low_mlp(
     hidden_layers: int,
     non_linearity: None,
     normalization: torch.nn.Module,
+    rotations: int,
 ) -> torch.nn.Module:
 
-    fixed_input = fixed_rotation_layer(n=in_width)
+    fixed_input, fixed_output_width = fixed_rotation_layer(
+        n=in_width, rotations=rotations
+    )
 
     mlp = LowOrderMLP(
-        in_width=in_width * in_width,
+        in_width=fixed_output_width,
         out_width=out_width,
         hidden_width=hidden_width,
         hidden_layers=hidden_layers,

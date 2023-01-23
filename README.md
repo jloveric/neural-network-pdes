@@ -63,6 +63,10 @@ of the equations seems to be working better than conservative form - conservativ
 ```
 python examples/high_order_euler.py mlp.hidden.width=40 max_epochs=10000 mlp.segments=2 mlp.n=3 mlp.hidden.layers=2 factor=0.1 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=20 batch_size=512 form=primitive loss_weight.discontinuity=1.0 loss_weight.interior=0.1 optimizer=adamw
 ```
+and, adding additional rotations
+```
+python examples/high_order_euler.py mlp.hidden.width=40 max_epochs=10000 mlp.segments=2 mlp.n=3 mlp.hidden.layers=2 factor=0.1 mlp.layer_type=discontinuous optimizer.patience=200 mlp.input.segments=20 batch_size=512 form=primitive loss_weight.discontinuity=1.0 loss_weight.interior=0.1 optimizer=adamw mlp.normalize=True mlp.rotations=4
+```
 ## Training
 High order MLP
 ```

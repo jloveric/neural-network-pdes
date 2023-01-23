@@ -51,7 +51,8 @@ gpus: 1
 batch_size: 1024
 
 # decay factor for discontinuities
-factor: 0.001
+factor: 0.1
+gradient_clip: 0.5
 
 # Are you training? Otherwise plot the result
 train: True

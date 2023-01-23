@@ -106,7 +106,7 @@ class Net(LightningModule):
                 else MaxAbsNormalization,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
-                rotations=cfg.mlp.rotations
+                rotations=cfg.mlp.rotations,
             )
         elif cfg.mlp.style == "high-order-input":
             layer_list = []
@@ -167,7 +167,13 @@ class Net(LightningModule):
             self.create_graph = True
 
     def forward(self, x):
-        return self.model(x)
+        res = self.model(x)
+
+        # limit density and pressure
+        torch.clamp(res[:, 0], min=0.01)
+        torch.clamp(res[:, 2], min=0.01)
+
+        return res
 
     def flux(self, x):
         return cform.flux(self.forward(x), gamma=self._gamma)
@@ -273,6 +279,11 @@ class Net(LightningModule):
         self.log(f"train_loss", loss, prog_bar=True)
 
         self.manual_backward(loss, create_graph=self.create_graph)
+        self.clip_gradients(
+            optimizer,
+            gradient_clip_val=self.cfg.gradient_clip,
+            gradient_clip_algorithm="value",
+        )
 
         optimizer.step()
         optimizer.zero_grad()

@@ -31,7 +31,7 @@ def run_implicit_images(cfg: DictConfig):
         model = Net(cfg)
         trainer.fit(model)
         print("testing")
-        #trainer.test(model)
+        # trainer.test(model)
 
         print("finished testing")
         print("best check_point", trainer.checkpoint_callback.best_model_path)
