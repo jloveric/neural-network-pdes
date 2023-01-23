@@ -22,14 +22,15 @@ import PIL.Image
 from torchvision import transforms
 from functorch import vmap, jacrev, hessian
 from functorch.experimental import replace_all_batch_norm_modules_
-
+from high_order_layers_torch.networks import (
+    transform_low_mlp,
+    transform_mlp
+)
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
 
 from neural_network_pdes.transform_network import (
-    transform_mlp,
     ReshapeNormalize,
-    transform_low_mlp,
 )
 import logging
 
