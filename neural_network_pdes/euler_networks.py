@@ -24,7 +24,8 @@ from functorch import vmap, jacrev, hessian
 from functorch.experimental import replace_all_batch_norm_modules_
 from high_order_layers_torch.networks import (
     transform_low_mlp,
-    transform_mlp
+    transform_mlp,
+    initialize_network_polynomial_layers,
 )
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
@@ -159,6 +160,7 @@ class Net(LightningModule):
                 f"Style should be 'standard' or 'transform', got {cfg.mlp.style}"
             )
 
+        initialize_network_polynomial_layers(self, max_slope=1.0, max_offset=0.0)
         # replace_all_batch_norm_modules_(self.model)
 
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
