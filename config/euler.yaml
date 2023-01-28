@@ -27,6 +27,10 @@ physics:
   gamma: 1.4
   artificial_viscosity: 0.0
 
+# When this value is 0, no loss reduction occurs with time
+# when set to 0, the final state hardly contributes to the loss
+time_decay: 0.0
+
 # pde weighting
 loss_weight:
   # from the paper "Discontinuity Computing Using Physics-Informed Neural Networks"

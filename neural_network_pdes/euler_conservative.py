@@ -5,14 +5,7 @@ from high_order_layers_torch.networks import *
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
-
-
-def pde_grid():
-
-    x = 2.0 * (torch.arange(0, 100, 1) / 100.0 - 0.5)
-    t = torch.arange(0.0, 100, 1) / (100.0)
-    grid_x, grid_t = torch.meshgrid(x, t)
-    return torch.transpose(torch.stack([grid_x.flatten(), grid_t.flatten()]), 0, 1)
+from neural_network_pdes.common import solution_points
 
 
 class PDEDataset(Dataset):
@@ -20,26 +13,7 @@ class PDEDataset(Dataset):
 
         self._gamma = gamma
 
-        # interior conditions
-        x = 2.0 * torch.rand(size) - 1.0
-        t = torch.rand(size)
-
-        # boundary conditions (perhaps these should be sqrt interior...)
-        boundary_size = int(size / 10)
-        xl = -torch.ones(boundary_size)
-        xr = torch.ones(boundary_size)
-        tb = torch.rand(boundary_size)
-
-        # Define the "grid" points in the model
-        # These could all be generated on the fly
-        # Add initial conditions which start at time t=0
-        # Each x has a correspoding time, so below the intial
-        # conditions are all the interior conditions (x,t)
-        # then all conditions at t=0, (x,0) then the left
-        # boundary conditions at various times (xl, tb) and
-        # the right boundary conditions at various times (xr, tb)
-        x = torch.cat((x, x, xl, xr)).view(-1, 1)
-        t = torch.cat((t, 0 * t, tb, tb)).view(-1, 1)
+        x, t = solution_points(size)
 
         # initial condition
         rho = torch.where(x < 0, 1.0, 0.125)
@@ -102,12 +76,14 @@ def flux(q: Tensor, gamma: float = 1.4):
 
 
 def interior_loss(
+    x: Tensor,
     q: Tensor,
     grad_q: Tensor,
     grad_f: Tensor,
     hessian: Tensor = None,
     artificial_viscosity: float = 0,
     eps: float = 0.1,
+    time_decay: float = 0.0,
 ):
     """
     Compute the loss (solve the PDE) for everywhere not
@@ -122,6 +98,10 @@ def interior_loss(
         difference of pde from 0 squared
     """
     gamma = 1.4
+
+    # this value should be 1 at t=0 and then move
+    # towards 0 at t=end (which is 1 in this case)
+    decay = 1.0 - time_decay * x[:, 1]
 
     r = q[:, 0]
     mx = q[:, 1]
@@ -165,7 +145,7 @@ def interior_loss(
         ]
     )
 
-    square = discontinuity * r_eq * r_eq
+    square = discontinuity * decay * r_eq * r_eq
 
     # and then reduced by a factor 1000 to further shrink
     res = torch.sum(square.flatten())
@@ -181,6 +161,7 @@ def euler_loss(
     artificial_viscosity: float,
     targets: Tensor,
     eps: float = 0.1,
+    time_decay: float = 0.0,
 ):
     """
     Compute the loss for the euler equations
@@ -193,6 +174,7 @@ def euler_loss(
         artificial_viscosity: add viscosity to prevent entropy violating shocks
         targets : target values (used for boundaries and initial conditions.)
         eps: factor for computing discontinuity loss
+        time_decay: since things are causal late times should have smaller loss (I think)
     Returns :
         sum of losses.
     """
@@ -212,12 +194,14 @@ def euler_loss(
 
     in_loss = (
         interior_loss(
+            x[interior],
             q[interior],
             grad_q[interior],
             grad_f[interior],
             # hessian=hessian[interior],
             artificial_viscosity=artificial_viscosity,
             eps=eps,
+            time_decay=time_decay,
         )
         / in_size
     )

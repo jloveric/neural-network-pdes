@@ -6,38 +6,13 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-
-def pde_grid():
-
-    x = 2.0 * (torch.arange(0, 100, 1) / 100.0 - 0.5)
-    t = torch.arange(0.0, 100, 1) / (100.0)
-    grid_x, grid_t = torch.meshgrid(x, t)
-    return torch.transpose(torch.stack([grid_x.flatten(), grid_t.flatten()]), 0, 1)
+from neural_network_pdes.common import solution_points
 
 
 class PDEDataset(Dataset):
     def __init__(self, size: int = 10000):
 
-        # interior conditions
-        x = 2.0 * torch.rand(size) - 1.0
-        t = torch.rand(size)
-
-        # boundary conditions (perhaps these should be sqrt interior...)
-        boundary_size = int(size / 10)
-        xl = -torch.ones(boundary_size)
-        xr = torch.ones(boundary_size)
-        tb = torch.rand(boundary_size)
-
-        # Define the "grid" points in the model
-        # These could all be generated on the fly
-        # Add initial conditions which start at time t=0
-        # Each x has a correspoding time, so below the intial
-        # conditions are all the interior conditions (x,t)
-        # then all conditions at t=0, (x,0) then the left
-        # boundary conditions at various times (xl, tb) and
-        # the right boundary conditions at various times (xr, tb)
-        x = torch.cat((x, x, xl, xr)).view(-1, 1)
-        t = torch.cat((t, 0 * t, tb, tb)).view(-1, 1)
+        x, t = solution_points(size)
 
         # initial condition
         rho = torch.where(x < 0, 1.0, 0.125)
@@ -72,7 +47,9 @@ def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
     return torch.dot(diff.flatten(), diff.flatten())
 
 
-def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
+def interior_loss(
+    x: Tensor, q: Tensor, grad_q: Tensor, eps: float, time_decay: float = 0.0
+):
     """
     Compute the loss (solve the PDE) for everywhere not
     on a boundary or an initial condition.
@@ -85,6 +62,9 @@ def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
     """
 
     gamma = 1.4
+
+    # assuming t ranges from 0 to 1
+    decay = 1.0 - time_decay * x[:, 1]
 
     r = q[:, 0]
     u = q[:, 1]
@@ -114,14 +94,21 @@ def interior_loss(q: Tensor, grad_q: Tensor, eps: float):
         ]
     )
 
-    square = discontinuity * r_eq * r_eq
+    square = discontinuity * decay * r_eq * r_eq
 
     res = torch.sum(square.flatten())
 
     return res
 
 
-def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor, eps: float):
+def euler_loss(
+    x: Tensor,
+    q: Tensor,
+    grad_q: Tensor,
+    targets: Tensor,
+    eps: float,
+    time_decay: float = 0.0,
+):
     """
     Compute the loss for the euler equations
 
@@ -148,7 +135,12 @@ def euler_loss(x: Tensor, q: Tensor, grad_q: Tensor, targets: Tensor, eps: float
     lbc_size = len(q[left_indexes])
     rbc_size = len(q[right_indexes])
 
-    in_loss = interior_loss(q[interior], grad_q[interior], eps=eps) / in_size
+    in_loss = (
+        interior_loss(
+            x[interior], q[interior], grad_q[interior], eps=eps, time_decay=time_decay
+        )
+        / in_size
+    )
     ic_loss = initial_condition_loss(q[ic_indexes], targets[ic_indexes]) / ic_size
     left_bc_loss = (
         left_dirichlet_bc_loss(q[left_indexes], targets[left_indexes]) / lbc_size

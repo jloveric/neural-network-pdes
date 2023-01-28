@@ -29,6 +29,7 @@ from high_order_layers_torch.networks import (
 )
 import neural_network_pdes.euler as pform
 import neural_network_pdes.euler_conservative as cform
+from neural_network_pdes.common import pde_grid
 
 from neural_network_pdes.transform_network import (
     ReshapeNormalize,
@@ -265,6 +266,7 @@ class Net(LightningModule):
                 grad_q=nj,
                 targets=y,
                 eps=self.cfg.loss_weight.discontinuity,
+                time_decay=self.cfg.time_decay,
             )
         else:
             raise ValueError(f"form should be conservative or primitive")
@@ -392,7 +394,7 @@ class ImageSampler(Callback):
 def generate_images(model: nn.Module, save_to: str = None, layer_type: str = None):
 
     model.eval()
-    inputs = pform.pde_grid().detach().to(model.device)
+    inputs = pde_grid().detach().to(model.device)
     y_hat = model(inputs).detach().cpu().numpy()
     outputs = y_hat.reshape(100, 100, 3)
 
