@@ -224,39 +224,8 @@ class Net(LightningModule):
                 artificial_viscosity=self.cfg.physics.artificial_viscosity,
                 targets=y,
                 eps=self.cfg.loss_weight.discontinuity,
-            )
-        elif self.cfg.form == "integral":
-
-            xl = xf.clone()
-            xr = xf.clone()
-
-            # dx
-            xl[:, 0] = xf[:, 0] - 0.5 * self.cfg.delta
-            xr[:, 0] = xf[:, 0] + 0.5 * self.cfg.delta
-
-            # dt
-            xtp = xf.clone()
-            xtm = xf.clone()
-            # xtp[:,1]=xf[:,1]+0.5*self.cfg.delta_t
-            # xtm[:,1]=xf[:,1]-0.5*self.cfg.delta_t
-
-            # flux_left = vmap(self.flux)(xl).squeeze(1).unsqueeze(2)
-            # flux_right = vmap(self.flux)(xr).squeeze(1).unsqueeze(2)
-
-            dudx = nj[:, 1, 0]
-            grad_f = (flux_right - flux_left) / self.cfg.delta
-            # print('hessian', torch.nonzero(hess))
-            # hess = vmap(hessian(self.forward))(xf).reshape(-1, 3, 4)
-
-            in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
-                x=x,
-                q=y_hat,
-                grad_q=nj,
-                grad_f=grad_f,
-                hessian=None,  # hess,
-                artificial_viscosity=0,  # self.cfg.physics.artificial_viscosity,
-                targets=y,
-                eps=self.cfg.loss_weight.discontinuity,
+                scale_x=self.cfg.scale_x,
+                scale_t=self.cfg.scale_t,
             )
         elif self.cfg.form == "primitive":
 
@@ -267,6 +236,8 @@ class Net(LightningModule):
                 targets=y,
                 eps=self.cfg.loss_weight.discontinuity,
                 time_decay=self.cfg.time_decay,
+                scale_x=self.cfg.scale_x,
+                scale_t=self.cfg.scale_t,
             )
         else:
             raise ValueError(f"form should be conservative or primitive")

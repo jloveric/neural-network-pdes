@@ -48,7 +48,13 @@ def right_dirichlet_bc_loss(outputs: Tensor, targets: Tensor):
 
 
 def interior_loss(
-    x: Tensor, q: Tensor, grad_q: Tensor, eps: float, time_decay: float = 0.0
+    x: Tensor,
+    q: Tensor,
+    grad_q: Tensor,
+    eps: float,
+    time_decay: float = 0.0,
+    scale_x: float = 1.0,
+    scale_t: float = 1.0,
 ):
     """
     Compute the loss (solve the PDE) for everywhere not
@@ -57,6 +63,10 @@ def interior_loss(
         q : primitive variables vector
         grad_q : gradient of the primitive variables [dx,dt]
         eps : shock detection factor
+        scale_x : inputs are scaled from [-1, 1] which compresses
+        the derivatives x=x^{prime}*s where we take the derivative
+        with respect to x so the scale factor is (1/s)
+        scale_t : scale factor for t, see above
     Returns :
         difference of pde from 0 squared
     """
@@ -86,11 +96,11 @@ def interior_loss(
 
     r_eq = torch.stack(
         [
-            rt + u * rx + r * ux,
+            rt / scale_t + (u * rx + r * ux) / scale_x,
             # Normalize the value before
             # (r * ut + r * u * ux + px),
-            (ut + u * ux + (1 / r) * px),
-            (pt + r * c2 * ux + u * px),
+            ut / scale_t + (u * ux + (1 / r) * px) / scale_x,
+            pt / scale_t + (r * c2 * ux + u * px) / scale_x,
         ]
     )
 
@@ -108,6 +118,8 @@ def euler_loss(
     targets: Tensor,
     eps: float,
     time_decay: float = 0.0,
+    scale_x: float = 1.0,
+    scale_t: float = 1.0,
 ):
     """
     Compute the loss for the euler equations
@@ -118,12 +130,16 @@ def euler_loss(
         grad_q : gradients of primitive values [dx, dt]
         targets : target values (used for boundaries and initial conditions.)
         eps : shock detection factor
+        scale_x : inputs are scaled from [-1, 1] which compresses
+        the derivatives x=x^{prime}*s where we take the derivative
+        with respect to x so the scale factor is (1/s)
+        scale_t : scale factor for t, see above
     Returns :
         sum of losses.
     """
     left_mask = x[:, 0] == -1.0  # x=0
     right_mask = x[:, 0] == 1.0  # x=1
-    ic_mask = x[:, 1] == 0  # t=0
+    ic_mask = x[:, 1] == -1.0  # t=-1
 
     left_indexes = torch.nonzero(left_mask)
     right_indexes = torch.nonzero(right_mask)
@@ -137,7 +153,13 @@ def euler_loss(
 
     in_loss = (
         interior_loss(
-            x[interior], q[interior], grad_q[interior], eps=eps, time_decay=time_decay
+            x[interior],
+            q[interior],
+            grad_q[interior],
+            eps=eps,
+            time_decay=time_decay,
+            scale_x=scale_x,
+            scale_t=scale_t,
         )
         / in_size
     )

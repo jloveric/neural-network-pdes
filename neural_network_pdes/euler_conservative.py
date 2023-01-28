@@ -84,6 +84,8 @@ def interior_loss(
     artificial_viscosity: float = 0,
     eps: float = 0.1,
     time_decay: float = 0.0,
+    scale_x: float = 1.0,
+    scale_t: float = 1.0,
 ):
     """
     Compute the loss (solve the PDE) for everywhere not
@@ -101,7 +103,7 @@ def interior_loss(
 
     # this value should be 1 at t=0 and then move
     # towards 0 at t=end (which is 1 in this case)
-    decay = 1.0 - time_decay * x[:, 1]
+    decay = 1.0 - time_decay * 0.5 * (x[:, 1] + 1)
 
     r = q[:, 0]
     mx = q[:, 1]
@@ -139,9 +141,9 @@ def interior_loss(
     # Note, the equations below are multiplied by r to reduce the loss.
     r_eq = torch.stack(
         [
-            rt + frx,  # + artificial_viscosity * rxx,
-            mt + fmx,  # + artificial_viscosity * mxx,
-            et + fex,  # + artificial_viscosity * exx,
+            rt / scale_t + frx / scale_x,  # + artificial_viscosity * rxx,
+            mt / scale_t + fmx / scale_x,  # + artificial_viscosity * mxx,
+            et / scale_t + fex / scale_x,  # + artificial_viscosity * exx,
         ]
     )
 
@@ -162,6 +164,8 @@ def euler_loss(
     targets: Tensor,
     eps: float = 0.1,
     time_decay: float = 0.0,
+    scale_x: float = 1.0,
+    scale_t: float = 1.0,
 ):
     """
     Compute the loss for the euler equations
@@ -202,6 +206,8 @@ def euler_loss(
             artificial_viscosity=artificial_viscosity,
             eps=eps,
             time_decay=time_decay,
+            scale_x=scale_x,
+            scale_t=scale_t,
         )
         / in_size
     )
