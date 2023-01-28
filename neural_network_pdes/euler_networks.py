@@ -61,10 +61,6 @@ class Net(LightningModule):
 
         self._gamma = cfg.physics.gamma
 
-        # TODO: Add a fixed layer after the input layer that
-        # produces [x, t, (x+t), (x-t)] with no weight adjustment
-        # this would be a fixed linear transform layer.
-
         nl = (
             None
             if cfg.mlp.nonlinearity is None
