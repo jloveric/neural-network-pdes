@@ -66,27 +66,7 @@ class Net(LightningModule):
             if cfg.mlp.nonlinearity is None
             else nonlinearity_options[cfg.mlp.nonlinearity]
         )
-        if cfg.mlp.style == "standard":
-            self.model = HighOrderMLP(
-                layer_type=cfg.mlp.layer_type,
-                n=cfg.mlp.n,
-                n_in=cfg.mlp.n_in,
-                n_hidden=cfg.mlp.n_in,
-                n_out=cfg.mlp.n_out,
-                in_width=cfg.mlp.input.width,
-                in_segments=cfg.mlp.input.segments,
-                out_width=cfg.mlp.output.width,
-                out_segments=cfg.mlp.output.segments,
-                hidden_width=cfg.mlp.hidden.width,
-                hidden_layers=cfg.mlp.hidden.layers,
-                hidden_segments=cfg.mlp.hidden.segments,
-                normalization=None
-                if cfg.mlp.normalize is False
-                else MaxAbsNormalization,  # LazyBatchNorm1d,
-                non_linearity=nl,
-                periodicity=cfg.mlp.periodicity,
-            )
-        elif cfg.mlp.style == "transform":
+        if cfg.mlp.style == "transform":
             self.model = transform_mlp(
                 layer_type=cfg.mlp.layer_type,
                 in_width=cfg.mlp.input.width,

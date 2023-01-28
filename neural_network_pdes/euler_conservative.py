@@ -184,7 +184,7 @@ def euler_loss(
     """
     left_mask = x[:, 0] == -1.0  # x=0
     right_mask = x[:, 0] == 1.0  # x=1
-    ic_mask = x[:, 1] == 0  # t=0
+    ic_mask = x[:, 1] == -1.0  # t=-1
 
     left_indexes = torch.nonzero(left_mask)
     right_indexes = torch.nonzero(right_mask)

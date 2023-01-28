@@ -7,7 +7,10 @@ mlp:
   n_in: null
   n_out: null
   n_hidden: null
-  periodicity: 2.0
+
+  # We don't need this if we use max_abs normalization (it seems)
+  periodicity: null #2.0
+
   rescale_output: False
   scale: 2.0
   normalize: True
