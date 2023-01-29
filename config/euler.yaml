@@ -9,7 +9,7 @@ mlp:
   n_hidden: null
 
   # We don't need this if we use max_abs normalization (it seems)
-  periodicity: null #2.0
+  periodicity: 2.0
 
   rescale_output: False
   scale: 2.0

@@ -67,6 +67,10 @@ and, adding additional rotations
 ```
 python examples/high_order_euler.py mlp.hidden.width=40 max_epochs=10000 mlp.segments=2 mlp.n=3 mlp.hidden.layers=2 factor=0.1 mlp.layer_type=discontinuous optimizer.patience=200 mlp.input.segments=20 batch_size=512 form=primitive loss_weight.discontinuity=1.0 loss_weight.interior=0.1 optimizer=adamw mlp.normalize=True mlp.rotations=4
 ```
+better (starting to see a contact discontinuity - unfortunately it's showing up in pressure as well)
+```
+python examples/high_order_euler.py mlp.hidden.width=40 max_epochs=10000 mlp.segments=4 mlp.n=4 mlp.hidden.layers=4 factor=0.025 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=20 batch_size=512 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0 optimizer=adam mlp.normalize=True mlp.rotations=4 gradient_clip=5.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000
+```
 ## Training
 High order MLP
 ```
