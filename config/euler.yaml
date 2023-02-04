@@ -26,6 +26,12 @@ mlp:
     layers: 4
     width: 20
 
+refinement:
+  type: null #p_refine
+  epochs: 2
+  start_n: 2
+  target_n: 7
+
 physics:
   gamma: 1.4
   artificial_viscosity: 0.0

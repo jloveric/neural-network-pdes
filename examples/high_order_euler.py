@@ -18,23 +18,50 @@ def run(cfg: DictConfig):
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
 
     if cfg.train is True:
+
         checkpoint_callback = ModelCheckpoint(
             filename="{epoch:03d}", monitor="train_loss"
         )
         lr_monitor = LearningRateMonitor(logging_interval="step")
 
-        trainer = Trainer(
-            max_epochs=cfg.max_epochs,
-            gpus=cfg.gpus,
-            callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
-        )
-        model = Net(cfg)
-        trainer.fit(model)
-        print("testing")
-        # trainer.test(model)
+        if cfg.refinement.type == None:
 
-        print("finished testing")
-        print("best check_point", trainer.checkpoint_callback.best_model_path)
+            trainer = Trainer(
+                max_epochs=cfg.max_epochs,
+                gpus=cfg.gpus,
+                callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
+            )
+            model = Net(cfg)
+            trainer.fit(model)
+            print("testing")
+            # trainer.test(model)
+
+            print("finished testing")
+            print("best check_point", trainer.checkpoint_callback.best_model_path)
+
+        elif cfg.refinement.type == "p_refine":
+
+            # diff = cfg.mlp.target_n - cfg.mlp.n
+            model = Net(cfg)
+
+            for order in range(cfg.refinement.start_n, cfg.refinement.target_n):
+                trainer = Trainer(
+                    max_epochs=cfg.refinement.epochs,
+                    gpus=cfg.gpus,
+                    callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
+                )
+                # trainer = Trainer(max_epochs=cfg.max_epochs // diff, gpus=cfg.gpus)
+                print(f"Training order {order}")
+                trainer.fit(model)
+                # trainer.test(model)
+                cfg.mlp.n = order + 1
+                next_model = Net(cfg)
+
+                interpolate_high_order_mlp(network_in=model, network_out=next_model)
+                model = next_model
+
+        else:
+            print(f"Refinement type not recognized {cfg.refinement.type}")
     else:
         # plot some data
         print("evaluating result")

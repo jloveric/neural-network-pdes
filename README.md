@@ -76,6 +76,10 @@ to be a huge issue as long as its > 1.
 ```
 python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=3 mlp.hidden.layers=3 factor=0.025 mlp.layer_type=continuous optimizer.patience=1000 mlp.input.segments=20 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adamw mlp.normalize=True mlp.rotations=6 gradient_clip=5.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False
 ```
+with polynomial refinement
+```
+python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=4 mlp.n=3 mlp.hidden.layers=8 factor=0.025 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=20 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adamw mlp.normalize=True mlp.rotations=6 gradient_clip=5.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=1000
+```
 ## Training
 High order MLP
 ```
