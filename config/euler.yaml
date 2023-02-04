@@ -7,7 +7,7 @@ mlp:
   n_in: null
   n_out: null
   n_hidden: null
-
+  resnet: False
   # We don't need this if we use max_abs normalization (it seems)
   periodicity: 2.0
 

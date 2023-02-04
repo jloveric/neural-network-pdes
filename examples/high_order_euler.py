@@ -12,7 +12,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 
 
 @hydra.main(config_path="../config", config_name="euler")
-def run_implicit_images(cfg: DictConfig):
+def run(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     print("Working directory : {}".format(os.getcwd()))
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
@@ -53,4 +53,4 @@ def run_implicit_images(cfg: DictConfig):
 
 
 if __name__ == "__main__":
-    run_implicit_images()
+    run()

@@ -86,6 +86,7 @@ class Net(LightningModule):
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
                 rotations=cfg.mlp.rotations,
+                resnet=cfg.mlp.resnet,
             )
         elif cfg.mlp.style == "high-order-input":
             layer_list = []
