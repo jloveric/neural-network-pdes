@@ -43,7 +43,11 @@ def run(cfg: DictConfig):
 
             # diff = cfg.mlp.target_n - cfg.mlp.n
             model = Net(cfg)
-
+            cfg.mlp.n = cfg.refinement.start_n
+            n = cfg.mlp.n
+            cfg.mlp.n_in = n
+            cfg.mlp.n_out = n
+            cfg.mlp.n_hidden = n
             for order in range(cfg.refinement.start_n, cfg.refinement.target_n):
                 trainer = Trainer(
                     max_epochs=cfg.refinement.epochs,
@@ -54,7 +58,12 @@ def run(cfg: DictConfig):
                 print(f"Training order {order}")
                 trainer.fit(model)
                 # trainer.test(model)
-                cfg.mlp.n = order + 1
+                n = order + 1
+                cfg.mlp.n = n
+                cfg.mlp.n_in = n
+                cfg.mlp.n_out = n
+                cfg.mlp.n_hidden = n
+
                 next_model = Net(cfg)
 
                 interpolate_high_order_mlp(network_in=model, network_out=next_model)
