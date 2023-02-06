@@ -31,6 +31,7 @@ refinement:
   epochs: 2
   start_n: 2
   target_n: 7
+  step: 1
 
 physics:
   gamma: 1.4

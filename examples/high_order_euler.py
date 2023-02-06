@@ -48,7 +48,12 @@ def run(cfg: DictConfig):
             cfg.mlp.n_in = n
             cfg.mlp.n_out = n
             cfg.mlp.n_hidden = n
-            for order in range(cfg.refinement.start_n, cfg.refinement.target_n):
+            for order in range(
+                cfg.refinement.start_n,
+                cfg.refinement.target_n + 1,
+                cfg.refinement.step,
+            ):
+
                 trainer = Trainer(
                     max_epochs=cfg.refinement.epochs,
                     gpus=cfg.gpus,
@@ -58,7 +63,7 @@ def run(cfg: DictConfig):
                 print(f"Training order {order}")
                 trainer.fit(model)
                 # trainer.test(model)
-                n = order + 1
+                n = order + cfg.refinement.step
                 cfg.mlp.n = n
                 cfg.mlp.n_in = n
                 cfg.mlp.n_out = n
