@@ -88,6 +88,10 @@ another with contact discontinuity and correct velocity, 8 layers and 10th order
 ```
 python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=2 mlp.hidden.layers=8 factor=0.025 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=10 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adamw mlp.normalize=True mlp.rotations=4 gradient_clip=5.0e-1 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=500 refinement.target_n=11
 ```
+This one produced a pretty solid rarefaction wave, could be steeper (developed at 6th order) using "waves" approach.
+```
+python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=2 mlp.hidden.layers=12 factor=0.025 mlp.layer_type=continuous optimizer.patience=200 mlp.input.segments=10 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adamw mlp.normalize=True mlp.rotations=4 gradient_clip=5.0e-1 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=500 refinement.target_n=20 refinement.start_n=2
+```
 ## Training
 High order MLP
 ```

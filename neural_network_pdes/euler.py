@@ -32,6 +32,22 @@ class PDEDataset(Dataset):
         return self.input[idx], self.output[idx]
 
 
+def by_left_eigenvector(rho, p, gamma, v0, v1, v2):
+    """
+    Multiply a vector - in this case the pde, by the
+    left eigenvector assuming (continuity, velocity, pressure) equations
+    in that order.  This is the primitive left eigenvector as derived
+    in the jupyer notebook
+    """
+    c2 = torch.clamp(gamma * p / rho, 0.01)
+
+    return (
+        v0 - v2 / c2,
+        v2 / (2 * c2) - rho * v1 / (2 * torch.sqrt(c2)),
+        v2 / (2 * c2) + rho * v1 / (2 * torch.sqrt(c2)),
+    )
+
+
 def initial_condition_loss(outputs: Tensor, targets: Tensor):
     diff = targets - outputs
     return torch.dot(diff.flatten(), diff.flatten())
@@ -92,15 +108,29 @@ def interior_loss(
     discontinuity = 1.0 / (eps * (torch.abs(ux) - ux) + 1)
 
     c2 = gamma * p / r
-    # Note, the equations below are multiplied by r to reduce the loss.
+
+    delta = 1e-2
+
+    continuity_equation = rt / scale_t + (u * rx + r * ux) / scale_x
+    velocity_equation = ut / scale_t + (u * ux + (1 / r) * px) / scale_x
+    pressure_equation = pt / scale_t + (r * c2 * ux + u * px) / scale_x
+
+    l1, l2, l3 = by_left_eigenvector(
+        rho=r,
+        p=p,
+        gamma=gamma,
+        v0=continuity_equation,
+        v1=velocity_equation,
+        v2=pressure_equation,
+    )
 
     r_eq = torch.stack(
         [
-            rt / scale_t + (u * rx + r * ux) / scale_x,
+            l1,
             # Normalize the value before
             # (r * ut + r * u * ux + px),
-            ut / scale_t + (u * ux + (1 / r) * px) / scale_x,
-            pt / scale_t + (r * c2 * ux + u * px) / scale_x,
+            l2,
+            l3,
         ]
     )
 
