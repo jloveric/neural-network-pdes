@@ -9,7 +9,7 @@ mlp:
   n_hidden: null
   resnet: False
   # We don't need this if we use max_abs normalization (it seems)
-  periodicity: 2.0
+  periodicity: null #2.0
 
   rescale_output: False
   scale: 2.0
@@ -45,7 +45,7 @@ time_decay: 0.0
 # and space derivatives. X is [-1, 1] and t is [0, 1] so t has
 # a scale factor of 0.5
 scale_x: 1
-scale_t: 0.5
+scale_t: 0.25
 
 # pde weighting
 loss_weight:

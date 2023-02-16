@@ -55,7 +55,9 @@ def run(cfg: DictConfig):
             ):
 
                 trainer = Trainer(
-                    max_epochs=cfg.refinement.epochs,
+                    max_epochs=cfg.refinement.epochs
+                    if order < cfg.refinement.target_n
+                    else cfg.max_epochs,
                     gpus=cfg.gpus,
                     callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
                 )
