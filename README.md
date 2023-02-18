@@ -36,8 +36,12 @@ the boundary conditions and the interior solution.  You can see here the initial
 ![Sod Shock Velocity](images/Velocity-fourier.png)
 
 ### Continuous piecewise polynomial layers
-
+This is actually the 5th order polynomial (not 6th) using 12 layers and mesh refinement. Shocks aren't sharp enough to call it good.
+```
+python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=2 mlp.hidden.layers=12 factor=0.025 mlp.layer_type=continuous optimizer.patience=200000 mlp.input.segments=10 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0 optimizer=adam mlp.normalize=True mlp.rotations=4 gradient_clip=0.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=500 refinement.target_n=6 refinement.start_n=2
+```
 ![Sod Shock Density](images/Density-continuous.png)
+![Sod Shock Velocity](images/Pressure-continuous.png)
 ![Sod Shock Velocity](images/Velocity-continuous.png)
 
 ### Discontinuous piecewise polynomial layers
