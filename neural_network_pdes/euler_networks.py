@@ -232,6 +232,13 @@ class Net(LightningModule):
         self.log(f"train_loss", loss, prog_bar=True)
 
         self.manual_backward(loss, create_graph=self.create_graph)
+        """
+        if self.create_graph is False:
+            self.manual_backward(loss, create_graph=self.create_graph)
+        else:
+            torch.autograd.grad(outputs=loss, inputs=x, create_graph=True)
+        """
+
         self.clip_gradients(
             optimizer,
             gradient_clip_val=self.cfg.gradient_clip,
@@ -239,7 +246,9 @@ class Net(LightningModule):
         )
 
         optimizer.step()
-        optimizer.zero_grad()
+
+        # memory leak issue with create_graph=True in backward https://github.com/pytorch/pytorch/issues/7343
+        optimizer.zero_grad(set_to_none=True)
 
         # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
@@ -247,6 +256,7 @@ class Net(LightningModule):
     def training_epoch_end(self, outputs):
         sch = self.lr_schedulers()
         sch.step(self.trainer.callback_metrics["train_loss"])
+        torch.cuda.empty_cache()
 
     def train_dataloader(self):
         trainloader = torch.utils.data.DataLoader(
