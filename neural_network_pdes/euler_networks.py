@@ -7,6 +7,7 @@ import hydra
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
+from high_order_layers_optimizers.optim_adahessian import Adahessian
 from pytorch_lightning import LightningModule, Trainer, Callback
 import torch.optim as optim
 import torch.nn.functional as F
@@ -172,8 +173,10 @@ class Net(LightningModule):
 
         x, y = batch
 
-        x.requires_grad_(True)
+        #x.requires_grad_(True)
+        #y.requires_grad_(True)
         y_hat = self(x)
+        #y_hat.requires_grad_(True)
 
         xf = x.reshape(x.shape[0], 1, x.shape[1])
         jacobian = vmap(jacrev(self.forward))(xf)
@@ -219,11 +222,16 @@ class Net(LightningModule):
         else:
             raise ValueError(f"form should be conservative or primitive")
 
+        #in_loss.requires_grad_(True)
+        #ic_loss.requires_grad_(True)
+        #left_bc_loss.requires_grad_(True)
+        #right_bc_loss.requires_grad_(True)
         loss = (
             self.cfg.loss_weight.interior * in_loss
             + self.cfg.loss_weight.initial * ic_loss
             + self.cfg.loss_weight.boundary * (left_bc_loss + right_bc_loss)
         )
+        #loss.requires_grad_(True)
 
         self.log(f"in_loss", in_loss)
         self.log(f"ic_loss", ic_loss)
@@ -231,7 +239,21 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss)
         self.log(f"train_loss", loss, prog_bar=True)
 
-        self.manual_backward(loss, create_graph=self.create_graph)
+        if self.cfg.optimizer.name == "adahessian":
+            #print('self.model.parameters', list(self.model.parameters()))
+            grad = torch.autograd.grad(
+                loss,
+                self.model.parameters(),
+                torch.ones_like(loss),
+                create_graph=True,
+                allow_unused=True,
+            )
+
+            for index, param in enumerate(self.model.parameters()):
+                #print(f'param {index}', param)
+                param.grad = grad[index]
+        else:
+            self.manual_backward(loss, create_graph=False)
         """
         if self.create_graph is False:
             self.manual_backward(loss, create_graph=self.create_graph)
@@ -282,7 +304,7 @@ class Net(LightningModule):
     def configure_optimizers(self):
 
         if self.cfg.optimizer.name == "adahessian":
-            optimizer = alt_optim.Adahessian(
+            optimizer = Adahessian(
                 self.parameters(),
                 lr=self.cfg.optimizer.lr,
                 betas=self.cfg.optimizer.betas,
