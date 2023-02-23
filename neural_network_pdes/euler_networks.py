@@ -233,27 +233,34 @@ class Net(LightningModule):
         )
         #loss.requires_grad_(True)
 
-        self.log(f"in_loss", in_loss)
-        self.log(f"ic_loss", ic_loss)
-        self.log(f"left_bc_loss", left_bc_loss)
-        self.log(f"right_bc_loss", right_bc_loss)
-        self.log(f"train_loss", loss, prog_bar=True)
+        self.log(f"in_loss", in_loss.item())
+        self.log(f"ic_loss", ic_loss.item())
+        self.log(f"left_bc_loss", left_bc_loss.item())
+        self.log(f"right_bc_loss", right_bc_loss.item())
+        self.log(f"train_loss", loss.item(), prog_bar=True)
 
+        optimizer.zero_grad(set_to_none=True)
+        grad = None
         if self.cfg.optimizer.name == "adahessian":
             #print('self.model.parameters', list(self.model.parameters()))
             grad = torch.autograd.grad(
                 loss,
-                self.model.parameters(),
+                [param for param in self.model.parameters() if param.requires_grad==True],
                 torch.ones_like(loss),
                 create_graph=True,
                 allow_unused=True,
             )
 
+            
+            count=0
             for index, param in enumerate(self.model.parameters()):
                 #print(f'param {index}', param)
-                param.grad = grad[index]
+                if param.requires_grad == True:
+                    param.grad = grad[count]
+                    count+=1
+            
         else:
-            self.manual_backward(loss, create_graph=False)
+            self.manual_backward(loss, create_graph=True)
         """
         if self.create_graph is False:
             self.manual_backward(loss, create_graph=self.create_graph)
@@ -268,9 +275,10 @@ class Net(LightningModule):
         )
 
         optimizer.step()
+        
 
         # memory leak issue with create_graph=True in backward https://github.com/pytorch/pytorch/issues/7343
-        optimizer.zero_grad(set_to_none=True)
+        #optimizer.zero_grad(set_to_none=True)
 
         # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
