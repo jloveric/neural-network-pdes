@@ -13,7 +13,7 @@ mlp:
 
   rescale_output: False
   scale: 2.0
-  normalize: True
+  normalize: maxabs # False, maxabs, midrange, instance
   segments: 3
   input:
     segments: ${mlp.segments}

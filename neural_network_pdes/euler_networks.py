@@ -50,7 +50,7 @@ class SinLayer(torch.nn.Module):
 
 
 nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer(), "tanh": nn.Tanh()}
-
+normalization_type = {"midrange" : MaxCenterNormalization, "maxabs" : MaxAbsNormalization, "instance" : LazyInstanceNorm1d}
 
 class Net(LightningModule):
     def __init__(self, cfg: DictConfig):
@@ -83,7 +83,7 @@ class Net(LightningModule):
                 hidden_layers=cfg.mlp.hidden.layers,
                 normalization=None
                 if cfg.mlp.normalize is False
-                else MaxAbsNormalization,  # LazyInstanceNorm1d,
+                else normalization_type[cfg.mlp.normalize], #MaxCenterNormalization, #MaxAbsNormalization,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
                 rotations=cfg.mlp.rotations,
@@ -152,8 +152,8 @@ class Net(LightningModule):
         res = self.model(x)
 
         # limit density and pressure
-        torch.clamp(res[:, 0], min=0.01)
-        torch.clamp(res[:, 2], min=0.01)
+        #torch.clamp(res[:, 0], min=0.01)
+        #torch.clamp(res[:, 2], min=0.01)
 
         return res
 
@@ -260,7 +260,7 @@ class Net(LightningModule):
                     count+=1
             
         else:
-            self.manual_backward(loss, create_graph=True)
+            self.manual_backward(loss, create_graph=False)
         """
         if self.create_graph is False:
             self.manual_backward(loss, create_graph=self.create_graph)
