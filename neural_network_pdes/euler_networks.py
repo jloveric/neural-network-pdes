@@ -218,6 +218,7 @@ class Net(LightningModule):
                 time_decay=self.cfg.time_decay,
                 scale_x=self.cfg.scale_x,
                 scale_t=self.cfg.scale_t,
+                solve_waves=self.cfg.solve_waves
             )
         else:
             raise ValueError(f"form should be conservative or primitive")

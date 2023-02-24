@@ -71,6 +71,7 @@ def interior_loss(
     time_decay: float = 0.0,
     scale_x: float = 1.0,
     scale_t: float = 1.0,
+    solve_waves: bool=True,
 ):
     """
     Compute the loss (solve the PDE) for everywhere not
@@ -83,6 +84,8 @@ def interior_loss(
         the derivatives x=x^{prime}*s where we take the derivative
         with respect to x so the scale factor is (1/s)
         scale_t : scale factor for t, see above
+        solve_waves: If True, decompose with left eigenvalues into waves and
+        solve those equations instead.
     Returns :
         difference of pde from 0 squared
     """
@@ -114,25 +117,32 @@ def interior_loss(
     continuity_equation = rt / scale_t + (u * rx + r * ux) / scale_x
     velocity_equation = ut / scale_t + (u * ux + (1 / r) * px) / scale_x
     pressure_equation = pt / scale_t + (r * c2 * ux + u * px) / scale_x
+    if solve_waves is True :
+        l1, l2, l3 = by_left_eigenvector(
+            rho=r,
+            p=p,
+            gamma=gamma,
+            v0=continuity_equation,
+            v1=velocity_equation,
+            v2=pressure_equation,
+        )
 
-    l1, l2, l3 = by_left_eigenvector(
-        rho=r,
-        p=p,
-        gamma=gamma,
-        v0=continuity_equation,
-        v1=velocity_equation,
-        v2=pressure_equation,
-    )
+        r_eq = torch.stack(
+            [
+                l1,
+                l2,
+                l3,
+            ]
+        )
+    else :
+        r_eq = torch.stack(
+            [
+                continuity_equation,
+                velocity_equation,
+                pressure_equation,
+            ]
+        )
 
-    r_eq = torch.stack(
-        [
-            l1,
-            # Normalize the value before
-            # (r * ut + r * u * ux + px),
-            l2,
-            l3,
-        ]
-    )
 
     square = discontinuity * decay * r_eq * r_eq
 
@@ -150,6 +160,7 @@ def euler_loss(
     time_decay: float = 0.0,
     scale_x: float = 1.0,
     scale_t: float = 1.0,
+    solve_waves: bool=True,
 ):
     """
     Compute the loss for the euler equations
@@ -164,6 +175,7 @@ def euler_loss(
         the derivatives x=x^{prime}*s where we take the derivative
         with respect to x so the scale factor is (1/s)
         scale_t : scale factor for t, see above
+        solve_waves: If True, solve L*q instead of q.
     Returns :
         sum of losses.
     """
@@ -190,6 +202,7 @@ def euler_loss(
             time_decay=time_decay,
             scale_x=scale_x,
             scale_t=scale_t,
+            solve_waves=solve_waves
         )
         / in_size
     )

@@ -58,6 +58,7 @@ loss_weight:
 
 # Form of equations, conservative or primitive
 form: "conservative"
+solve_waves: True
 
 # Delta, offset for computing derivatives
 delta: 0.01
