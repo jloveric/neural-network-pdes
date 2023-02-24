@@ -1136,14 +1136,14 @@ resolved_reference = "f180309519b461f4b6ebc311c3463504c0a1c821"
 
 [[package]]
 name = "high-order-layers-torch"
-version = "1.2.14"
+version = "1.2.15"
 description = "High order layers in pytorch"
 category = "main"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "high_order_layers_torch-1.2.14-py3-none-any.whl", hash = "sha256:944be423f05b1c75c0ce37b14809b42a395b88ddfa898112e54e634fd15be27c"},
-    {file = "high_order_layers_torch-1.2.14.tar.gz", hash = "sha256:326f7ccd2aa264d7aeba57e1db6eb42eaf7dad9ddd6ba5f0f7e3b67e617acce7"},
+    {file = "high_order_layers_torch-1.2.15-py3-none-any.whl", hash = "sha256:01805ea2675c04f7f8d0c725bddd3a5e5adf5963805bd1499ffef9ecd1e4c231"},
+    {file = "high_order_layers_torch-1.2.15.tar.gz", hash = "sha256:9959850139f7217a14558a8b7c7d2171c55f9d600bfb5c8f3910ab21c4c811c0"},
 ]
 
 [package.dependencies]
@@ -4039,4 +4039,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "56cb1f6f7fe7aeab246ca4846f774687e0269c0b746244e4624455c9c30f9707"
+content-hash = "944c43b6a0ff1eee8a49a9f154dd092e31e049744ecfbdfee66ada1b09070ba9"
