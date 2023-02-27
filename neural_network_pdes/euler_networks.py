@@ -152,8 +152,8 @@ class Net(LightningModule):
         res = self.model(x)
 
         # limit density and pressure
-        #torch.clamp(res[:, 0], min=0.01)
-        #torch.clamp(res[:, 2], min=0.01)
+        torch.clamp(res[:, 0], min=0.01)
+        torch.clamp(res[:, 2], min=0.01)
 
         return res
 
@@ -173,7 +173,7 @@ class Net(LightningModule):
 
         x, y = batch
 
-        #x.requires_grad_(True)
+        x.requires_grad_(True)
         #y.requires_grad_(True)
         y_hat = self(x)
         #y_hat.requires_grad_(True)
@@ -240,7 +240,7 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss.item())
         self.log(f"train_loss", loss.item(), prog_bar=True)
 
-        optimizer.zero_grad(set_to_none=True)
+        #optimizer.zero_grad(set_to_none=True)
         grad = None
         if self.cfg.optimizer.name == "adahessian":
             #print('self.model.parameters', list(self.model.parameters()))
@@ -279,7 +279,7 @@ class Net(LightningModule):
         
 
         # memory leak issue with create_graph=True in backward https://github.com/pytorch/pytorch/issues/7343
-        #optimizer.zero_grad(set_to_none=True)
+        optimizer.zero_grad()
 
         # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
