@@ -17,7 +17,7 @@ torch-optimizer = "^0.3.0"
 pytorch-lightning = "^1.9.2"
 high-order-layers-optimizers = { git = "https://github.com/jloveric/adahessian.git", branch = "master" }
 grpcio = "1.51.1"
-high-order-layers-torch = "^1.2.15"
+high-order-layers-torch = "^1.2.16"
 
 
 [tool.poetry.dev-dependencies]

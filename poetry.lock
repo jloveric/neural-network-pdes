@@ -1136,14 +1136,14 @@ resolved_reference = "f180309519b461f4b6ebc311c3463504c0a1c821"
 
 [[package]]
 name = "high-order-layers-torch"
-version = "1.2.15"
+version = "1.2.16"
 description = "High order layers in pytorch"
 category = "main"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "high_order_layers_torch-1.2.15-py3-none-any.whl", hash = "sha256:01805ea2675c04f7f8d0c725bddd3a5e5adf5963805bd1499ffef9ecd1e4c231"},
-    {file = "high_order_layers_torch-1.2.15.tar.gz", hash = "sha256:9959850139f7217a14558a8b7c7d2171c55f9d600bfb5c8f3910ab21c4c811c0"},
+    {file = "high_order_layers_torch-1.2.16-py3-none-any.whl", hash = "sha256:f5faf3896319bb0c644436f696c24d1a8e314356eae9297b0c47a487906dd0ed"},
+    {file = "high_order_layers_torch-1.2.16.tar.gz", hash = "sha256:eb46974fe448adf0b63cdf785df39482408fae6774304eb382a1f075553d2f17"},
 ]
 
 [package.dependencies]
@@ -2525,13 +2525,6 @@ files = [
     {file = "Pillow-9.4.0-1-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:b8c2f6eb0df979ee99433d8b3f6d193d9590f735cf12274c108bd954e30ca858"},
     {file = "Pillow-9.4.0-1-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:b70756ec9417c34e097f987b4d8c510975216ad26ba6e57ccb53bc758f490dab"},
     {file = "Pillow-9.4.0-1-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:43521ce2c4b865d385e78579a082b6ad1166ebed2b1a2293c3be1d68dd7ca3b9"},
-    {file = "Pillow-9.4.0-2-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:9d9a62576b68cd90f7075876f4e8444487db5eeea0e4df3ba298ee38a8d067b0"},
-    {file = "Pillow-9.4.0-2-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:87708d78a14d56a990fbf4f9cb350b7d89ee8988705e58e39bdf4d82c149210f"},
-    {file = "Pillow-9.4.0-2-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:8a2b5874d17e72dfb80d917213abd55d7e1ed2479f38f001f264f7ce7bae757c"},
-    {file = "Pillow-9.4.0-2-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:83125753a60cfc8c412de5896d10a0a405e0bd88d0470ad82e0869ddf0cb3848"},
-    {file = "Pillow-9.4.0-2-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:9e5f94742033898bfe84c93c831a6f552bb629448d4072dd312306bab3bd96f1"},
-    {file = "Pillow-9.4.0-2-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:013016af6b3a12a2f40b704677f8b51f72cb007dac785a9933d5c86a72a7fe33"},
-    {file = "Pillow-9.4.0-2-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:99d92d148dd03fd19d16175b6d355cc1b01faf80dae93c6c3eb4163709edc0a9"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:2968c58feca624bb6c8502f9564dd187d0e1389964898f5e9e1fbc8533169157"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c5c1362c14aee73f50143d74389b2c158707b4abce2cb055b7ad37ce60738d47"},
     {file = "Pillow-9.4.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bd752c5ff1b4a870b7661234694f24b1d2b9076b8bf337321a814c612665f343"},
@@ -4039,4 +4032,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "944c43b6a0ff1eee8a49a9f154dd092e31e049744ecfbdfee66ada1b09070ba9"
+content-hash = "919bd8ce78c7868cccd67824a2052c5cdb452b3a720f08878eb39c78d4cb189b"
