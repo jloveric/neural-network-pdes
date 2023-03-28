@@ -12,12 +12,11 @@ matplotlib = "^3.6.2"
 hydra-nevergrad-sweeper = "1.3.0.dev0"
 omegaconf = "^2.2.3"
 Pillow = "^9.3.0"
-torchvision = "^0.14.0"
 torch-optimizer = "^0.3.0"
 pytorch-lightning = "^1.9.2"
 high-order-layers-optimizers = { git = "https://github.com/jloveric/adahessian.git", branch = "master" }
 grpcio = "1.51.1"
-high-order-layers-torch = "^1.2.16"
+high-order-layers-torch = "^1.3.1"
 
 
 [tool.poetry.dev-dependencies]
