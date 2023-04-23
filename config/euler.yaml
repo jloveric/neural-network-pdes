@@ -68,7 +68,7 @@ delta_t: 0.01
 data_size: 10000
 
 max_epochs: 10000
-gpus: 1
+accelerator: cuda
 batch_size: 1024
 
 # decay factor for discontinuities

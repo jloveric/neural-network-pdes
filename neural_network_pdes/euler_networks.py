@@ -50,7 +50,12 @@ class SinLayer(torch.nn.Module):
 
 
 nonlinearity_options = {"relu": torch.nn.ReLU(), "sin": SinLayer(), "tanh": nn.Tanh()}
-normalization_type = {"midrange" : MaxCenterNormalization, "maxabs" : MaxAbsNormalization, "instance" : LazyInstanceNorm1d}
+normalization_type = {
+    "midrange": MaxCenterNormalization,
+    "maxabs": MaxAbsNormalization,
+    "instance": LazyInstanceNorm1d,
+}
+
 
 class Net(LightningModule):
     def __init__(self, cfg: DictConfig):
@@ -83,7 +88,9 @@ class Net(LightningModule):
                 hidden_layers=cfg.mlp.hidden.layers,
                 normalization=None
                 if cfg.mlp.normalize is False
-                else normalization_type[cfg.mlp.normalize], #MaxCenterNormalization, #MaxAbsNormalization,  # LazyInstanceNorm1d,
+                else normalization_type[
+                    cfg.mlp.normalize
+                ],  # MaxCenterNormalization, #MaxAbsNormalization,  # LazyInstanceNorm1d,
                 scale=cfg.mlp.scale,
                 periodicity=cfg.mlp.periodicity,
                 rotations=cfg.mlp.rotations,
@@ -174,9 +181,9 @@ class Net(LightningModule):
         x, y = batch
 
         x.requires_grad_(True)
-        #y.requires_grad_(True)
+        # y.requires_grad_(True)
         y_hat = self(x)
-        #y_hat.requires_grad_(True)
+        # y_hat.requires_grad_(True)
 
         xf = x.reshape(x.shape[0], 1, x.shape[1])
         jacobian = vmap(jacrev(self.forward))(xf)
@@ -208,7 +215,6 @@ class Net(LightningModule):
                 scale_t=self.cfg.scale_t,
             )
         elif self.cfg.form == "primitive":
-
             in_loss, ic_loss, left_bc_loss, right_bc_loss = pform.euler_loss(
                 x=x,
                 q=y_hat,
@@ -218,21 +224,21 @@ class Net(LightningModule):
                 time_decay=self.cfg.time_decay,
                 scale_x=self.cfg.scale_x,
                 scale_t=self.cfg.scale_t,
-                solve_waves=self.cfg.solve_waves
+                solve_waves=self.cfg.solve_waves,
             )
         else:
             raise ValueError(f"form should be conservative or primitive")
 
-        #in_loss.requires_grad_(True)
-        #ic_loss.requires_grad_(True)
-        #left_bc_loss.requires_grad_(True)
-        #right_bc_loss.requires_grad_(True)
+        # in_loss.requires_grad_(True)
+        # ic_loss.requires_grad_(True)
+        # left_bc_loss.requires_grad_(True)
+        # right_bc_loss.requires_grad_(True)
         loss = (
             self.cfg.loss_weight.interior * in_loss
             + self.cfg.loss_weight.initial * ic_loss
             + self.cfg.loss_weight.boundary * (left_bc_loss + right_bc_loss)
         )
-        #loss.requires_grad_(True)
+        # loss.requires_grad_(True)
 
         self.log(f"in_loss", in_loss.item())
         self.log(f"ic_loss", ic_loss.item())
@@ -240,26 +246,29 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss.item())
         self.log(f"train_loss", loss.item(), prog_bar=True)
 
-        #optimizer.zero_grad(set_to_none=True)
+        # optimizer.zero_grad(set_to_none=True)
         grad = None
         if self.cfg.optimizer.name == "adahessian":
-            #print('self.model.parameters', list(self.model.parameters()))
+            # print('self.model.parameters', list(self.model.parameters()))
             grad = torch.autograd.grad(
                 loss,
-                [param for param in self.model.parameters() if param.requires_grad==True],
+                [
+                    param
+                    for param in self.model.parameters()
+                    if param.requires_grad == True
+                ],
                 torch.ones_like(loss),
                 create_graph=True,
                 allow_unused=True,
             )
 
-            
-            count=0
+            count = 0
             for index, param in enumerate(self.model.parameters()):
-                #print(f'param {index}', param)
+                # print(f'param {index}', param)
                 if param.requires_grad == True:
                     param.grad = grad[count]
-                    count+=1
-            
+                    count += 1
+
         else:
             self.manual_backward(loss, create_graph=False)
         """
@@ -276,7 +285,6 @@ class Net(LightningModule):
         )
 
         optimizer.step()
-        
 
         # memory leak issue with create_graph=True in backward https://github.com/pytorch/pytorch/issues/7343
         optimizer.zero_grad()
@@ -284,7 +292,7 @@ class Net(LightningModule):
         # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs):
         sch = self.lr_schedulers()
         sch.step(self.trainer.callback_metrics["train_loss"])
         torch.cuda.empty_cache()
@@ -300,7 +308,6 @@ class Net(LightningModule):
         return trainloader
 
     def test_dataloader(self):
-
         testloader = torch.utils.data.DataLoader(
             self.test_dataset,
             batch_size=self.cfg.batch_size,
@@ -311,7 +318,6 @@ class Net(LightningModule):
         return testloader
 
     def configure_optimizers(self):
-
         if self.cfg.optimizer.name == "adahessian":
             optimizer = Adahessian(
                 self.parameters(),
@@ -369,7 +375,6 @@ class ImageSampler(Callback):
         self.cfg = cfg
 
     def on_train_epoch_end(self, trainer, pl_module, outputs=None):
-
         images = generate_images(
             pl_module, save_to="memory", layer_type=self.cfg.mlp.layer_type
         )
@@ -381,7 +386,6 @@ class ImageSampler(Callback):
 
 
 def generate_images(model: nn.Module, save_to: str = None, layer_type: str = None):
-
     model.eval()
     inputs = pde_grid().detach().to(model.device)
     y_hat = model(inputs).detach().cpu().numpy()
@@ -391,7 +395,6 @@ def generate_images(model: nn.Module, save_to: str = None, layer_type: str = Non
 
     image_list = []
     for j, name in enumerate(names):
-
         plt.figure(j + 1)
         fig, (ax0, ax1) = plt.subplots(2, 1)
 

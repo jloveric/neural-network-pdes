@@ -18,17 +18,15 @@ def run(cfg: DictConfig):
     print(f"Orig working directory    : {hydra.utils.get_original_cwd()}")
 
     if cfg.train is True:
-
         checkpoint_callback = ModelCheckpoint(
             filename="{epoch:03d}", monitor="train_loss"
         )
         lr_monitor = LearningRateMonitor(logging_interval="step")
 
         if cfg.refinement.type == None:
-
             trainer = Trainer(
                 max_epochs=cfg.max_epochs,
-                gpus=cfg.gpus,
+                accelerator=cfg.accelerator,
                 callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
             )
             model = Net(cfg)
@@ -40,7 +38,6 @@ def run(cfg: DictConfig):
             print("best check_point", trainer.checkpoint_callback.best_model_path)
 
         elif cfg.refinement.type == "p_refine":
-
             # diff = cfg.mlp.target_n - cfg.mlp.n
             model = Net(cfg)
             cfg.mlp.n = cfg.refinement.start_n
@@ -53,12 +50,11 @@ def run(cfg: DictConfig):
                 cfg.refinement.target_n + 1,
                 cfg.refinement.step,
             ):
-
                 trainer = Trainer(
                     max_epochs=cfg.refinement.epochs
                     if order < cfg.refinement.target_n
                     else cfg.max_epochs,
-                    gpus=cfg.gpus,
+                    accelerator=cfg.accelerator,
                     callbacks=[checkpoint_callback, ImageSampler(cfg=cfg), lr_monitor],
                 )
                 # trainer = Trainer(max_epochs=cfg.max_epochs // diff, gpus=cfg.gpus)
