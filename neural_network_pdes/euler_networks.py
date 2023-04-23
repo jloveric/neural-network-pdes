@@ -292,7 +292,7 @@ class Net(LightningModule):
         # If the network is discontinuous, add smoothing.
         smooth_discontinuous_network(self, factor=self.cfg.factor)
 
-    def on_train_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs=None):
         sch = self.lr_schedulers()
         sch.step(self.trainer.callback_metrics["train_loss"])
         torch.cuda.empty_cache()
