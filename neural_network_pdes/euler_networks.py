@@ -60,6 +60,8 @@ normalization_type = {
 class Net(LightningModule):
     def __init__(self, cfg: DictConfig):
         super().__init__()
+        device = "gpu" if cfg.accelerator is "cuda" else "cpu"
+
         self.automatic_optimization = False
 
         self.save_hyperparameters(cfg)
@@ -95,6 +97,7 @@ class Net(LightningModule):
                 periodicity=cfg.mlp.periodicity,
                 rotations=cfg.mlp.rotations,
                 resnet=cfg.mlp.resnet,
+                device=device,
             )
         elif cfg.mlp.style == "high-order-input":
             layer_list = []
@@ -104,6 +107,7 @@ class Net(LightningModule):
                 in_features=cfg.mlp.input.width,
                 out_features=cfg.mlp.hidden.width,
                 segments=cfg.mlp.input.segments,
+                device=device,
             )
             layer_list.append(input_layer)
 
