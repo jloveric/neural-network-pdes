@@ -60,7 +60,8 @@ normalization_type = {
 class Net(LightningModule):
     def __init__(self, cfg: DictConfig):
         super().__init__()
-        device = "gpu" if cfg.accelerator is "cuda" else "cpu"
+
+        device = cfg.accelerator
 
         self.automatic_optimization = False
 
