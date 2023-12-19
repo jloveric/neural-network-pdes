@@ -8,6 +8,7 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
 from high_order_layers_optimizers.optim_adahessian import Adahessian
+from lion_pytorch import Lion
 from pytorch_lightning import LightningModule, Trainer, Callback
 import torch.optim as optim
 import torch.nn.functional as F
@@ -346,6 +347,11 @@ class Net(LightningModule):
                 self.parameters(),
                 lr=self.cfg.optimizer.lr,
                 max_iter=self.cfg.optimizer.max_iter,
+            )
+        elif self.cfg.optimizer.name == "lion":
+            optimizer = Lion(
+                params=self.parameters(),
+                lr=self.cfg.optimizer.lr,
             )
 
         reduce_on_plateau = False
