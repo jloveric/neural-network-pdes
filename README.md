@@ -98,7 +98,7 @@ python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.seg
 ```
 back to adam, which works fine with refinement at high order and with gradient clipping turned off.  May be problematic when doing high order without initializing from a lower order solution.  In this all the shock structure is there, shocks are just too smoothed out.
 ```
-python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=2 mlp.hidden.layers=8 factor=0.025 mlp.layer_type=switch_continuous optimizer.patience=200000 mlp.input.segments=10 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adam mlp.normalize=maxabs mlp.rotations=4 gradient_clip=0.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=500 refinement.target_n=6 refinement.start_n=2
+python examples/high_order_euler.py mlp.hidden.width=20 max_epochs=10000 mlp.segments=2 mlp.n=2 mlp.hidden.layers=8 factor=0.025 mlp.layer_type=continuous optimizer.patience=200000 mlp.input.segments=10 batch_size=2048 form=primitive loss_weight.discontinuity=0.0 loss_weight.interior=1.0e-1 optimizer=adam mlp.normalize=maxabs mlp.rotations=4 gradient_clip=0.0 loss_weight.boundary=10 loss_weight.initial=10 data_size=10000 mlp.resnet=False refinement.type=p_refine refinement.epochs=500 refinement.target_n=6 refinement.start_n=2
 ```
 ### With switch layer (gating)
 Nothing to see below, runs but doesn't converge. Probably some different normalization.

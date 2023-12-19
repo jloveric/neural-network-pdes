@@ -71,8 +71,11 @@ max_epochs: 10000
 accelerator: cuda
 batch_size: 1024
 
-# decay factor for discontinuities
+# for discontinuous layers, apply this smoothing factor
+# does nothing for continuous or other layers
 factor: 0.1
+
+# gradient clipping
 gradient_clip: 5.0
 
 # Are you training? Otherwise plot the result
