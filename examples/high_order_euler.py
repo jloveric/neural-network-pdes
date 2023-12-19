@@ -11,7 +11,7 @@ from neural_network_pdes.euler_networks import ImageSampler, generate_images, Ne
 from pytorch_lightning.callbacks import LearningRateMonitor
 
 
-@hydra.main(config_path="../config", config_name="euler")
+@hydra.main(config_path="../config", config_name="euler", version_base="1.3")
 def run(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     print("Working directory : {}".format(os.getcwd()))

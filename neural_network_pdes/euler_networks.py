@@ -22,7 +22,8 @@ import matplotlib
 import io
 import PIL.Image
 from torchvision import transforms
-from functorch import vmap, jacrev, hessian
+from torch import vmap
+from torch.func import jacrev
 from functorch.experimental import replace_all_batch_norm_modules_
 from high_order_layers_torch.networks import (
     transform_low_mlp,
