@@ -1,0 +1,7 @@
+name: sophia
+lr: 1e-3
+rho: 0.035
+patience: 1000 # Never schedule with sophia!
+factor: 0.1
+gamma: 0.9
+scheduler: plateau # exponential
