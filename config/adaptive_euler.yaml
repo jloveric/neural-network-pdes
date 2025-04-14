@@ -1,0 +1,77 @@
+# Configuration for Euler PDE with AdaptivePiecewiseMLP
+# This config is used by the adaptive_euler.py script
+
+# Network configuration
+network:
+  hidden_layers: [40, 40, 40]  # Sizes of hidden layers
+  num_points: 10               # Initial number of points for piecewise functions
+  position_range: [-1, 1]      # Range of positions for piecewise functions
+  anti_periodic: false         # Whether to use anti-periodic boundary conditions
+  position_init: "uniform"     # Initialization method for positions
+  normalization: "noop"        # Normalization type (noop, maxabs)
+
+# Adaptive configuration
+adaptive:
+  enabled: true                # Whether to use adaptive point management
+  frequency: 1                # Apply adaptation every N batches
+  move_smoothest: true         # Whether to move smoothest points
+  move_smoothest_after: 1    # Start moving smoothest points after N epochs
+  threshold: 0.1               # Threshold for moving points (ratio of min/max error)
+
+# Physics configuration
+physics:
+  gamma: 1.4
+  artificial_viscosity: 0.0
+
+# When this value is 0, no loss reduction occurs with time
+# when set to 0, the final state hardly contributes to the loss
+time_decay: 0.0
+
+# Inputs are normalized to [-1, 1] so we need to scale the time
+# and space derivatives. X is [-1, 1] and t is [0, 1] so t has
+# a scale factor of 0.5
+scale_x: 1
+scale_t: 0.25
+
+# pde weighting
+loss_weight:
+  interior: 0.1
+  boundary: 10
+  initial: 10
+
+# Form of equations, conservative or primitive
+form: "conservative"
+solve_waves: true
+
+# Delta, offset for computing derivatives
+delta: 0.01
+delta_t: 0.01
+
+# generate this many interior data points
+data_size: 10000
+
+# Training configuration
+max_epochs: 5000
+accelerator: cuda
+batch_size: 1024
+learning_rate: 1e-4
+optimizer: "adam"
+
+# gradient clipping
+gradient_clip: 0.0 #5.0
+
+# Are you training? Otherwise plot the result
+train: true
+checkpoint: null
+save_images: true
+save_frequency: 50
+
+# Hydra configuration
+hydra:
+  run:
+    dir: outputs/adaptive_euler/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/adaptive_euler/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: true
