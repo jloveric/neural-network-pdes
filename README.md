@@ -2,6 +2,15 @@
 Neural Network Implicit Representation of Partial Differential Equations.  The problems here are solved using a simple high order MLP where
 the the input is (x,t) in 1D and the output is density, velocity and pressure.  The loss function is partial differential equation for the 1d euler equations of gas dynamics dotted with itself.  The resulting model contains the entire solution at every time point and every space point between start and end.
 
+## Installation
+```bash
+uv sync
+```
+To include dev dependencies:
+```bash
+uv sync --all-extras
+```
+
 <img src="images/euler1d-network.png" width=100% height=100% style="display: block; margin: 0 auto">
 
 ## Euler equations

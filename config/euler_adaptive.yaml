@@ -1,0 +1,71 @@
+# Adaptive Euler equations solver configuration
+# Uses AdaptivePiecewiseMLP from non_uniform_piecewise_layers
+
+defaults:
+  - _self_
+
+# Configure Hydra
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: true
+
+# Model configuration
+model:
+  num_points: 10  # Number of piecewise points per segment
+  position_range: [-1, 1]
+  # width: [input_dim, hidden1, hidden2, ..., output_dim]
+  # Input: 2 (x, t), Output: 3 (density, velocity/momentum, pressure/energy)
+  width: [2, 20, 20, 20, 3]
+
+# Physics parameters
+physics:
+  gamma: 1.4
+  artificial_viscosity: 0.0
+
+# Time decay for loss weighting (0 = no decay)
+time_decay: 0.0
+
+# Scale factors for derivatives
+# Inputs are normalized to [-1, 1]
+scale_x: 1
+scale_t: 0.25
+
+# PDE loss weighting
+loss_weight:
+  discontinuity: 0.0
+  interior: 0.1
+  boundary: 10
+  initial: 10
+
+# Form of equations: "conservative" or "primitive"
+form: "conservative"
+solve_waves: True
+
+# Data configuration
+data_size: 10000
+
+# Training configuration
+max_epochs: 5000
+accelerator: cuda
+batch_size: 1024
+gradient_clip: 5.0
+
+# Adaptive training configuration
+training:
+  adapt: global_error  # Options: global_error, move, null
+  weighted: True
+  move_threshold: null
+
+# Optimizer configuration
+optimizer:
+  name: adam
+  lr: 0.001
+  patience: 50
+  factor: 0.5
+
+# Visualization configuration
+visualization:
+  plot_interval: 100
+  gif_duration: 0.3

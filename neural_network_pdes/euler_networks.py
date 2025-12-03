@@ -7,7 +7,6 @@ import hydra
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from high_order_layers_torch.layers import *
 from high_order_layers_torch.networks import *
-from high_order_layers_optimizers.optim_adahessian import Adahessian
 from Sophia import SophiaG
 from lion_pytorch import Lion
 from pytorch_lightning import LightningModule, Trainer, Callback
@@ -159,9 +158,6 @@ class Net(LightningModule):
 
         self.root_dir = f"{hydra.utils.get_original_cwd()}"
         self.loss = nn.MSELoss()
-        self.create_graph = False
-        if self.cfg.optimizer.name in ["adahessian"]:
-            self.create_graph = True
 
     def forward(self, x):
         res = self.model(x)
@@ -254,31 +250,7 @@ class Net(LightningModule):
         self.log(f"right_bc_loss", right_bc_loss.item())
         self.log(f"train_loss", loss.item(), prog_bar=True)
 
-        # optimizer.zero_grad(set_to_none=True)
-        grad = None
-        if self.cfg.optimizer.name == "adahessian":
-            # print('self.model.parameters', list(self.model.parameters()))
-            grad = torch.autograd.grad(
-                loss,
-                [
-                    param
-                    for param in self.model.parameters()
-                    if param.requires_grad == True
-                ],
-                torch.ones_like(loss),
-                create_graph=True,
-                allow_unused=True,
-            )
-
-            count = 0
-            for index, param in enumerate(self.model.parameters()):
-                # print(f'param {index}', param)
-                if param.requires_grad == True:
-                    param.grad = grad[count]
-                    count += 1
-
-        else:
-            self.manual_backward(loss, create_graph=False)
+        self.manual_backward(loss, create_graph=False)
         """
         if self.create_graph is False:
             self.manual_backward(loss, create_graph=self.create_graph)
@@ -326,16 +298,7 @@ class Net(LightningModule):
         return testloader
 
     def configure_optimizers(self):
-        if self.cfg.optimizer.name == "adahessian":
-            optimizer = Adahessian(
-                self.parameters(),
-                lr=self.cfg.optimizer.lr,
-                betas=self.cfg.optimizer.betas,
-                eps=self.cfg.optimizer.eps,
-                weight_decay=self.cfg.optimizer.weight_decay,
-                hessian_power=self.cfg.optimizer.hessian_power,
-            )
-        elif self.cfg.optimizer.name == "adam":
+        if self.cfg.optimizer.name == "adam":
             optimizer = optim.Adam(
                 params=self.parameters(),
                 lr=self.cfg.optimizer.lr,
