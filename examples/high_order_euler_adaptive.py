@@ -17,8 +17,6 @@ import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 from torch import Tensor
-from torch.func import jacrev
-from torch import vmap
 from lion_pytorch import Lion
 import imageio
 
@@ -61,39 +59,102 @@ def compute_flux(model: nn.Module, x: Tensor, gamma: float) -> Tensor:
     return cform.flux(model(x), gamma=gamma)
 
 
+def compute_jacobian(model: nn.Module, x: Tensor) -> Tensor:
+    """
+    Compute Jacobian of model output w.r.t. input using autograd.
+    Returns tensor of shape (batch, output_dim, input_dim).
+    """
+    x = x.requires_grad_(True)
+    y = model(x)
+    
+    batch_size = x.shape[0]
+    output_dim = y.shape[1]
+    input_dim = x.shape[1]
+    
+    jacobian = torch.zeros(batch_size, output_dim, input_dim, device=x.device)
+    
+    for i in range(output_dim):
+        grad_outputs = torch.zeros_like(y)
+        grad_outputs[:, i] = 1.0
+        grads = torch.autograd.grad(
+            outputs=y,
+            inputs=x,
+            grad_outputs=grad_outputs,
+            create_graph=True,
+            retain_graph=True,
+        )[0]
+        jacobian[:, i, :] = grads
+    
+    return jacobian
+
+
+def compute_flux_jacobian(model: nn.Module, x: Tensor, gamma: float) -> Tensor:
+    """
+    Compute Jacobian of flux w.r.t. input using autograd.
+    Returns tensor of shape (batch, 3, 2).
+    """
+    x = x.requires_grad_(True)
+    y = model(x)
+    
+    # Compute flux manually to maintain gradient flow
+    rho = y[:, 0]
+    mx = y[:, 1]
+    en = y[:, 2]
+    p = (gamma - 1.0) * (en - 0.5 * (mx * mx / rho))
+    
+    f0 = mx
+    f1 = (mx * mx / rho) + p
+    f2 = mx * (en + p) / rho
+    flux = torch.stack([f0, f1, f2], dim=1)
+    
+    batch_size = x.shape[0]
+    input_dim = x.shape[1]
+    
+    jacobian = torch.zeros(batch_size, 3, input_dim, device=x.device)
+    
+    for i in range(3):
+        grad_outputs = torch.zeros_like(flux)
+        grad_outputs[:, i] = 1.0
+        grads = torch.autograd.grad(
+            outputs=flux,
+            inputs=x,
+            grad_outputs=grad_outputs,
+            create_graph=True,
+            retain_graph=True,
+        )[0]
+        jacobian[:, i, :] = grads
+    
+    return jacobian
+
+
 def compute_loss(
     model: nn.Module,
     x: Tensor,
     targets: Tensor,
     cfg: DictConfig,
-) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     """
     Compute the PDE loss including interior, initial condition, and boundary losses.
     Returns total loss and individual components.
     """
-    x.requires_grad_(True)
+    x = x.clone().requires_grad_(True)
     y_hat = model(x)
     
     # Clamp density and pressure to positive values
-    y_hat = y_hat.clone()
-    y_hat[:, 0] = torch.clamp(y_hat[:, 0], min=0.01)
-    y_hat[:, 2] = torch.clamp(y_hat[:, 2], min=0.01)
+    y_hat_clamped = y_hat.clone()
+    y_hat_clamped[:, 0] = torch.clamp(y_hat[:, 0], min=0.01)
+    y_hat_clamped[:, 2] = torch.clamp(y_hat[:, 2], min=0.01)
     
-    # Compute Jacobian
-    xf = x.reshape(x.shape[0], 1, x.shape[1])
-    jacobian = vmap(jacrev(model))(xf)
-    nj = jacobian.reshape(-1, 3, 2)
+    # Compute Jacobian using standard autograd
+    nj = compute_jacobian(model, x)
     
     if cfg.form == "conservative":
         # Compute flux jacobian for conservative form
-        def flux_fn(inp):
-            return cform.flux(model(inp), gamma=cfg.physics.gamma)
-        
-        flux_jacobian = vmap(jacrev(flux_fn))(xf).reshape(-1, 3, 2)
+        flux_jacobian = compute_flux_jacobian(model, x, cfg.physics.gamma)
         
         in_loss, ic_loss, left_bc_loss, right_bc_loss = cform.euler_loss(
             x=x,
-            q=y_hat,
+            q=y_hat_clamped,
             grad_q=nj,
             grad_f=flux_jacobian,
             hessian=None,
@@ -106,7 +167,7 @@ def compute_loss(
     else:  # primitive form
         in_loss, ic_loss, left_bc_loss, right_bc_loss = pform.euler_loss(
             x=x,
-            q=y_hat,
+            q=y_hat_clamped,
             grad_q=nj,
             targets=targets,
             eps=cfg.loss_weight.discontinuity,
@@ -122,7 +183,7 @@ def compute_loss(
         + cfg.loss_weight.boundary * (left_bc_loss + right_bc_loss)
     )
     
-    return total_loss, in_loss, ic_loss, left_bc_loss, right_bc_loss, y_hat
+    return total_loss, in_loss, ic_loss, left_bc_loss, right_bc_loss, y_hat_clamped
 
 
 def create_optimizer(parameters, cfg: DictConfig):
@@ -249,7 +310,6 @@ def main(cfg: DictConfig):
         optimizer,
         patience=cfg.optimizer.patience,
         factor=cfg.optimizer.factor,
-        verbose=True,
     )
     
     # Create GIF writers for visualization
@@ -310,7 +370,6 @@ def main(cfg: DictConfig):
                             optimizer,
                             patience=cfg.optimizer.patience,
                             factor=cfg.optimizer.factor,
-                            verbose=True,
                         )
         elif cfg.training.adapt == "move":
             threshold = cfg.training.move_threshold
@@ -324,7 +383,6 @@ def main(cfg: DictConfig):
                     optimizer,
                     patience=cfg.optimizer.patience,
                     factor=cfg.optimizer.factor,
-                    verbose=True,
                 )
         
         # Save best model

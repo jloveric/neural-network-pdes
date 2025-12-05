@@ -16,6 +16,7 @@ dependencies = [
     "high-order-layers-torch>=2.5.1",
     "pillow>=10.3.0",
     "sophia-optimizer @ git+https://github.com/stas00/Sophia.git@patch-1",
+    "non-uniform-piecewise-layers>=0.3.0",
 ]
 
 [project.optional-dependencies]
@@ -39,3 +40,8 @@ package = true
 
 [tool.uv.workspace]
 members = []
+
+[dependency-groups]
+dev = [
+    "imageio>=2.37.2",
+]
