@@ -37,6 +37,7 @@ from neural_network_pdes.common import pde_grid
 from neural_network_pdes.transform_network import (
     ReshapeNormalize,
 )
+from neural_network_pdes.traveling_sine_network import TravelingSineMLP
 import logging
 
 logger = logging.getLogger(__name__)
@@ -148,9 +149,20 @@ class Net(LightningModule):
                 non_linearity=nl or nn.Tanh(),
                 normalization=None,
             )
+        elif cfg.mlp.style == "traveling-sine":
+            self.model = TravelingSineMLP(
+                in_width=cfg.mlp.input.width,
+                out_width=cfg.mlp.output.width,
+                hidden_width=cfg.mlp.hidden.width,
+                hidden_layers=cfg.mlp.hidden.layers,
+                t_index=cfg.mlp.get("t_index", -1),
+                use_t_in_input=cfg.mlp.get("use_t_in_input", True),
+                w_init=cfg.mlp.get("w_init", 1.0),
+                a_init=cfg.mlp.get("a_init", 1.0),
+            )
         else:
             raise ValueError(
-                f"Style should be 'standard' or 'transform', got {cfg.mlp.style}"
+                f"Style not recognized: {cfg.mlp.style}"
             )
 
         initialize_network_polynomial_layers(self, max_slope=1.0, max_offset=0.0)
