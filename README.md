@@ -8,7 +8,25 @@ uv sync
 ```
 To include dev dependencies:
 ```bash
-uv sync --all-extras
+uv sync --group dev
+```
+
+## Quickstart
+Run an example:
+```bash
+uv run python examples/high_order_euler.py
+```
+Run a different example:
+```bash
+uv run python examples/high_order_euler_adaptive.py
+```
+Run the SIRENS-style example:
+```bash
+uv run python examples/sirens_euler.py
+```
+Run tests:
+```bash
+uv run pytest -q
 ```
 
 <img src="images/euler1d-network.png" width=100% height=100% style="display: block; margin: 0 auto">
@@ -142,3 +160,5 @@ Papers for me to read solving similar problems
 [ACTIVE LEARNING BASED SAMPLING FOR HIGH-DIMENSIONAL NONLINEAR PARTIAL DIFFERENTIAL EQUATIONS](https://arxiv.org/pdf/2112.13988.pdf)
 
 [Conservative physics-informed neural networks on discrete domains for conservation laws: Applications to forward and inverse problems]()
+
+[Flow Equivariant Recurrent Neural Networks](https://arxiv.org/html/2507.14793v2)
