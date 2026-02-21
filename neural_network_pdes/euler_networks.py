@@ -344,7 +344,6 @@ class Net(LightningModule):
                 optimizer,
                 patience=self.cfg.optimizer.patience,
                 factor=self.cfg.optimizer.factor,
-                verbose=True,
             )
             reduce_on_plateau = True
         elif self.cfg.optimizer.scheduler == "exponential":

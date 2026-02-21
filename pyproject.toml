@@ -37,6 +37,7 @@ dev = [
     "pytest>=6.2.5",
     "black>=22.3.0",
     "tensorboard>=2.11.0",
+    "setuptools>=65.0.0,<81",
     "jupyter>=1.0.0",
     "sympy>=1.11.1",
     "imageio>=2.37.2",
